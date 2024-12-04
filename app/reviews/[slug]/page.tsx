@@ -4,16 +4,12 @@ import { prisma } from '@/lib/prisma';
 import { Category } from '@prisma/client';
 import ReviewContent from './ReviewContent';
 
-interface PageParams {
-  slug: string;
-}
-
-interface PageProps {
-  params: PageParams;
+type Props = {
+  params: { slug: string };
   searchParams: { [key: string]: string | string[] | undefined };
-}
+};
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const article = await prisma.article.findFirst({
     where: {
       slug: params.slug,
@@ -40,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ReviewPage({ params, searchParams }: PageProps) {
+export default async function ReviewPage({ params, searchParams }: Props) {
   const { slug } = params;
   
   const article = await prisma.article.findFirst({
