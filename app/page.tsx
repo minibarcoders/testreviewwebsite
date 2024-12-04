@@ -1,38 +1,17 @@
 import { format } from 'date-fns';
 import { ArrowRight, Award } from 'lucide-react';
 import Link from 'next/link';
-import { ArticleService } from './services/articleService';
+import { ArticleService, ReviewArticle, BlogArticle } from './services/articleService';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Fixed or Custom - Tech Reviews & Insights',
-  description: 'Discover in-depth tech reviews, expert analysis, and the latest insights. Your trusted source for making informed technology decisions.',
-  keywords: ['tech reviews', 'technology insights', 'gadget reviews', 'tech blog'],
-  openGraph: {
-    title: 'Fixed or Custom - Tech Reviews & Insights',
-    description: 'Your trusted source for tech reviews and insights',
-    type: 'website',
-    url: 'https://fixedorcustom.com',
-    images: [
-      {
-        url: '/images/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Fixed or Custom',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Fixed or Custom - Tech Reviews & Insights',
-    description: 'Your trusted source for tech reviews and insights',
-    images: ['/images/og-image.jpg'],
-  },
+  title: 'Fixed or Custom | Tech Reviews & Guides',
+  description: 'Expert tech reviews and guides to help you make informed decisions about custom vs pre-built solutions.',
 };
 
 export default async function Home() {
   const latestReviews = await ArticleService.getLatestReviews(3);
-  const latestPosts = await ArticleService.getLatestBlogPosts(4);
+  const latestPosts = await ArticleService.getLatestPosts(4);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
@@ -114,7 +93,7 @@ export default async function Home() {
                     <div className="flex items-center gap-2 text-sm text-slate-600">
                       <span>{review.category}</span>
                       <span>•</span>
-                      <time>{review.date}</time>
+                      <time>{format(new Date(review.createdAt), 'MMMM d, yyyy')}</time>
                     </div>
                     
                     <h2 className="font-bold text-xl text-slate-900 line-clamp-2 group-hover:text-purple-600 transition-colors">
@@ -122,17 +101,17 @@ export default async function Home() {
                     </h2>
                     
                     <p className="text-slate-600 line-clamp-3">
-                      {review.snippet}
+                      {review.summary}
                     </p>
 
                     {/* Author */}
-                    <div className="flex items-center gap-2 pt-2">
+                    <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
                         <span className="text-sm font-medium text-slate-600">
-                          {review.author[0]}
+                          {review.author.name[0]}
                         </span>
                       </div>
-                      <span className="text-sm text-slate-600">{review.author}</span>
+                      <span className="text-sm text-slate-600">{review.author.name}</span>
                     </div>
                   </div>
                 </div>
@@ -179,13 +158,13 @@ export default async function Home() {
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden">
                           <span className="font-medium text-slate-600 text-sm">
-                            {post.author[0]}
+                            {post.author.name[0]}
                           </span>
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-slate-900">{post.author}</div>
+                          <div className="text-sm font-medium text-slate-900">{post.author.name}</div>
                           <div className="text-xs text-slate-500">
-                            {post.date}
+                            {format(new Date(post.createdAt), 'MMM d, yyyy')}
                           </div>
                         </div>
                       </div>
@@ -195,7 +174,7 @@ export default async function Home() {
                         {post.title}
                       </h3>
                       
-                      <p className="text-slate-600 line-clamp-2">{post.excerpt}</p>
+                      <p className="text-slate-600 line-clamp-2">{post.summary}</p>
                     </div>
                   </div>
                 </Link>

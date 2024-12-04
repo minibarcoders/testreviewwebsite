@@ -1,67 +1,31 @@
 'use client';
 
-import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useCallback } from 'react';
+import { GA_MEASUREMENT_ID } from '../components/GoogleAnalytics';
 
 declare global {
   interface Window {
-    gtag: (
-      type: string,
-      action: string,
-      data?: { [key: string]: any }
-    ) => void;
+    gtag: (command: string, ...args: any[]) => void;
   }
 }
 
-export const useAnalytics = () => {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  // Track page views
-  useEffect(() => {
-    if (pathname) {
-      window.gtag('event', 'page_view', {
-        page_path: pathname,
-        page_search: searchParams?.toString(),
+export function useAnalytics() {
+  const trackEvent = useCallback((action: string, params: Record<string, any>) => {
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', action, {
+        ...params,
+        send_to: GA_MEASUREMENT_ID
       });
     }
-  }, [pathname, searchParams]);
+  }, []);
 
-  // Track custom events
-  const trackEvent = (action: string, data?: { [key: string]: any }) => {
-    window.gtag('event', action, data);
-  };
-
-  // Track outbound links
-  const trackOutboundLink = (url: string) => {
-    window.gtag('event', 'click', {
-      event_category: 'outbound',
-      event_label: url,
-      transport_type: 'beacon',
+  const trackEngagement = useCallback((action: string, contentId: string) => {
+    trackEvent('engagement', {
+      action,
+      content_id: contentId,
+      timestamp: new Date().toISOString()
     });
-  };
+  }, [trackEvent]);
 
-  // Track file downloads
-  const trackDownload = (fileUrl: string, fileType: string) => {
-    window.gtag('event', 'download', {
-      event_category: 'file_download',
-      event_label: fileUrl,
-      file_type: fileType,
-    });
-  };
-
-  // Track user engagement
-  const trackEngagement = (type: string, contentId: string) => {
-    window.gtag('event', 'engagement', {
-      event_category: type,
-      event_label: contentId,
-    });
-  };
-
-  return {
-    trackEvent,
-    trackOutboundLink,
-    trackDownload,
-    trackEngagement,
-  };
-}; 
+  return { trackEvent, trackEngagement };
+} 
