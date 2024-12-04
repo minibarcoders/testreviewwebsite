@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAnalytics } from '../../hooks/useAnalytics';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 type Props = {
   score: number;

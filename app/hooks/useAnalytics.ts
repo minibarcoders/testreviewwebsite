@@ -11,7 +11,7 @@ declare global {
 
 export function useAnalytics() {
   const trackEvent = useCallback((action: string, params: Record<string, any>) => {
-    if (typeof window !== 'undefined' && window.gtag) {
+    if (typeof window !== 'undefined' && window.gtag && GA_MEASUREMENT_ID) {
       window.gtag('event', action, {
         ...params,
         send_to: GA_MEASUREMENT_ID
@@ -20,11 +20,13 @@ export function useAnalytics() {
   }, []);
 
   const trackEngagement = useCallback((action: string, contentId: string) => {
-    trackEvent('engagement', {
-      action,
-      content_id: contentId,
-      timestamp: new Date().toISOString()
-    });
+    if (GA_MEASUREMENT_ID) {
+      trackEvent('engagement', {
+        action,
+        content_id: contentId,
+        timestamp: new Date().toISOString()
+      });
+    }
   }, [trackEvent]);
 
   return { trackEvent, trackEngagement };
