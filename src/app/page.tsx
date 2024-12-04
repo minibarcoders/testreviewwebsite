@@ -2,6 +2,11 @@ import { format } from 'date-fns';
 import { ArrowRight, Award } from 'lucide-react';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+import { Article, User } from '@prisma/client';
+
+type ArticleWithAuthor = Article & {
+  author: User;
+};
 
 export default async function Home() {
   const latestReviews = await prisma.article.findMany({
@@ -130,7 +135,7 @@ export default async function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {latestReviews.map((review) => (
+            {latestReviews.map((review: Article) => (
               <Link 
                 key={review.id} 
                 href={`/reviews/${review.slug}`}
@@ -198,7 +203,7 @@ export default async function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {latestPosts.map((post, index) => (
+            {latestPosts.map((post: ArticleWithAuthor, index: number) => (
               <article 
                 key={post.id}
                 className={`bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden
@@ -227,7 +232,7 @@ export default async function Home() {
                             />
                           ) : (
                             <span className="font-medium text-slate-600 text-sm">
-                              {post.author.name.split(' ').map(n => n[0]).join('')}
+                              {post.author.name.split(' ').map((n: string) => n[0]).join('')}
                             </span>
                           )}
                         </div>
