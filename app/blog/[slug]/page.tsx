@@ -2,14 +2,14 @@ import { ArticleService } from '../../services/articleService';
 import { Metadata } from 'next';
 import BlogPostContent from './BlogPostContent';
 
-interface Props {
-  params: {
-    slug: string;
-  };
+type PageProps = {
+  params: { slug: string };
   searchParams: { [key: string]: string | string[] | undefined };
-}
+};
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(
+  { params }: PageProps
+): Promise<Metadata> {
   const post = await ArticleService.getBlogPostBySlug(params.slug);
   
   return {
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function BlogPost({ params }: Props) {
+export default async function BlogPost({ params }: PageProps) {
   const post = await ArticleService.getBlogPostBySlug(params.slug);
   return <BlogPostContent post={post} />;
 } 

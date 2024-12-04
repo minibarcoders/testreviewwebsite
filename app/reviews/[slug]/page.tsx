@@ -2,14 +2,14 @@ import { ArticleService } from '../../services/articleService';
 import { Metadata } from 'next';
 import ReviewContent from './ReviewContent';
 
-interface Props {
-  params: {
-    slug: string;
-  };
+type PageProps = {
+  params: { slug: string };
   searchParams: { [key: string]: string | string[] | undefined };
-}
+};
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(
+  { params }: PageProps
+): Promise<Metadata> {
   const review = await ArticleService.getReviewBySlug(params.slug);
   
   return {
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ReviewPage({ params }: Props) {
+export default async function ReviewPage({ params }: PageProps) {
   const review = await ArticleService.getReviewBySlug(params.slug);
   return <ReviewContent review={review} />;
 } 
