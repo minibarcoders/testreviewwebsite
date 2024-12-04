@@ -2,14 +2,11 @@ import { ArticleService } from '../../services/articleService';
 import { Metadata } from 'next';
 import ReviewContent from './ReviewContent';
 
-interface GenerateMetadataProps {
+export async function generateMetadata({
+  params,
+}: {
   params: { slug: string };
-  searchParams: Record<string, string | string[] | undefined>;
-}
-
-export async function generateMetadata(
-  { params }: GenerateMetadataProps
-): Promise<Metadata> {
+}): Promise<Metadata> {
   const review = await ArticleService.getReviewBySlug(params.slug);
   
   return {
@@ -23,11 +20,11 @@ export async function generateMetadata(
   };
 }
 
-interface PageProps {
+export default async function ReviewPage({
+  params,
+}: {
   params: { slug: string };
-}
-
-export default async function ReviewPage({ params }: PageProps) {
+}) {
   const review = await ArticleService.getReviewBySlug(params.slug);
   return <ReviewContent review={review} />;
 } 
