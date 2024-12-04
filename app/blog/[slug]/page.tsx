@@ -1,12 +1,13 @@
+import { FC } from 'react';
 import { ArticleService } from '../../services/articleService';
 import { Metadata } from 'next';
 import BlogPostContent from './BlogPostContent';
 import { notFound } from 'next/navigation';
 
-type Props = {
+interface PageProps {
   params: { slug: string };
-  searchParams: { [key: string]: string | string[] | undefined };
-};
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
 
 export async function generateStaticParams() {
   const posts = await ArticleService.getLatestPosts(100);
@@ -15,7 +16,9 @@ export async function generateStaticParams() {
   }));
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(
+  { params }: PageProps
+): Promise<Metadata> {
   const post = await ArticleService.getBlogPostBySlug(params.slug).catch(() => null);
   
   if (!post) {
@@ -36,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function BlogPost({ params }: Props) {
+const BlogPage: FC<PageProps> = async ({ params }) => {
   const post = await ArticleService.getBlogPostBySlug(params.slug).catch(() => null);
   
   if (!post) {
@@ -44,4 +47,6 @@ export default async function BlogPost({ params }: Props) {
   }
 
   return <BlogPostContent post={post} />;
-} 
+};
+
+export default BlogPage; 
