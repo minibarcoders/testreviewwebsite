@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAnalytics } from '../../hooks/useAnalytics';
 import { BlogArticle } from '../../services/articleService';
 import { format } from 'date-fns';
@@ -93,12 +94,13 @@ export default function BlogPostContent({ post }: Props) {
             </div>
           </div>
 
-          <div className="relative h-[400px] rounded-xl overflow-hidden shadow-lg mb-8 
-                       transform hover:scale-[1.01] transition-all duration-300">
-            <img
+          <div className="relative h-[400px] rounded-xl overflow-hidden shadow-lg mb-8">
+            <Image
               src={post.imageUrl}
               alt={post.title}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              priority
             />
           </div>
         </header>

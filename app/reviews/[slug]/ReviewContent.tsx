@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAnalytics } from '../../hooks/useAnalytics';
 import { ReviewArticle } from '../../services/articleService';
 import ScoreDisplay from '../../components/ui/ScoreDisplay';
@@ -84,10 +85,12 @@ export default function ReviewContent({ review }: Props) {
           </div>
 
           <div className="relative h-[400px] rounded-xl overflow-hidden shadow-lg mb-8">
-            <img
+            <Image
               src={review.imageUrl}
               alt={review.title}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              priority
             />
           </div>
 
