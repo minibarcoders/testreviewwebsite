@@ -1,7 +1,7 @@
 'use client';
 
 import { format } from 'date-fns';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import useAnalytics from '@/hooks/useAnalytics';
 import { useEffect } from 'react';
 import ScoreDisplay from '@/components/ui/ScoreDisplay';
 
@@ -40,10 +40,13 @@ export default function ReviewContent({ article }: Props) {
   const { trackEvent } = useAnalytics();
 
   useEffect(() => {
-    trackEvent('review_view', {
-      article_id: article.id,
-      title: article.title,
-      rating: article.rating?.overall
+    trackEvent({
+      name: 'review_view',
+      properties: {
+        article_id: article.id,
+        title: article.title,
+        rating: article.rating?.overall
+      }
     });
   }, [article.id, article.title, article.rating?.overall, trackEvent]);
 

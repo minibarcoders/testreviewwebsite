@@ -1,7 +1,7 @@
 'use client';
 
 import { format } from 'date-fns';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import useAnalytics from '@/hooks/useAnalytics';
 import { useEffect } from 'react';
 
 interface Author {
@@ -28,9 +28,12 @@ export default function BlogPostContent({ article }: Props) {
   const { trackEvent } = useAnalytics();
 
   useEffect(() => {
-    trackEvent('blog_post_view', {
-      article_id: article.id,
-      title: article.title
+    trackEvent({
+      name: 'blog_post_view',
+      properties: {
+        article_id: article.id,
+        title: article.title
+      }
     });
   }, [article.id, article.title, trackEvent]);
 
