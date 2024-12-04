@@ -40,13 +40,10 @@ export default function ReviewContent({ article }: Props) {
   const { trackEvent } = useAnalytics();
 
   useEffect(() => {
-    trackEvent({
-      name: 'review_view',
-      properties: {
-        article_id: article.id,
-        title: article.title,
-        rating: article.rating?.overall
-      }
+    trackEvent('review_view', {
+      article_id: article.id,
+      title: article.title,
+      rating: article.rating?.overall
     });
   }, [article.id, article.title, article.rating?.overall, trackEvent]);
 

@@ -28,12 +28,9 @@ export default function BlogPostContent({ article }: Props) {
   const { trackEvent } = useAnalytics();
 
   useEffect(() => {
-    trackEvent({
-      name: 'blog_post_view',
-      properties: {
-        article_id: article.id,
-        title: article.title
-      }
+    trackEvent('blog_post_view', {
+      article_id: article.id,
+      title: article.title
     });
   }, [article.id, article.title, trackEvent]);
 
