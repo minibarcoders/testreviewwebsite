@@ -1,50 +1,59 @@
-import { ArticleService } from '@/services/articleService';
 import { Metadata } from 'next';
-import ReviewContent from './ReviewContent';
 import { notFound } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
+import { Category } from '@prisma/client';
+import ReviewContent from './ReviewContent';
 
-export async function generateStaticParams() {
-  const reviews = await ArticleService.getLatestReviews(100);
-  return reviews.map((review) => ({
-    slug: review.slug,
-  }));
+type Props = {
+  params: {
+    slug: string
+  }
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const review = await ArticleService.getReviewBySlug(params.slug).catch(() => null);
-  
-  if (!review) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const article = await prisma.article.findFirst({
+    where: {
+      slug: params.slug,
+      category: Category.REVIEW,
+      published: true
+    }
+  });
+
+  if (!article) {
     return {
-      title: 'Review Not Found | Fixed or Custom',
-      description: 'The requested review could not be found.',
+      title: 'Review Not Found',
     };
   }
-  
+
   return {
-    title: `${review.title} Review | Fixed or Custom`,
-    description: review.summary,
+    title: article.title,
+    description: article.summary,
     openGraph: {
-      title: review.title,
-      description: review.summary,
-      images: [review.imageUrl],
+      title: article.title,
+      description: article.summary,
+      images: [article.imageUrl],
+      type: 'article',
     },
   };
 }
 
-export default async function ReviewPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
-  const review = await ArticleService.getReviewBySlug(params.slug).catch(() => null);
+export default async function ReviewPage({ params }: Props) {
+  const { slug } = params;
   
-  if (!review) {
+  const article = await prisma.article.findFirst({
+    where: {
+      slug,
+      category: Category.REVIEW,
+      published: true
+    },
+    include: {
+      author: true
+    }
+  });
+
+  if (!article) {
     notFound();
   }
 
-  return <ReviewContent review={review} />;
+  return <ReviewContent article={article} />;
 } 

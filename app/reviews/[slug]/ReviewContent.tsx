@@ -1,128 +1,124 @@
 'use client';
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import { ReviewArticle } from '@/services/articleService';
 import { format } from 'date-fns';
-import ScoreDisplay from '@/components/ui/ScoreDisplay';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { useEffect } from 'react';
+import ScoreDisplay from '@/app/components/ui/ScoreDisplay';
 
-type Props = {
-  review: ReviewArticle;
-};
+interface Author {
+  id: string;
+  name: string;
+  email: string;
+}
 
-export default function ReviewContent({ review }: Props) {
+interface Rating {
+  overall: number;
+  design: number;
+  features: number;
+  performance: number;
+  value: number;
+}
+
+interface Article {
+  id: string;
+  title: string;
+  content: string;
+  summary: string;
+  imageUrl: string;
+  createdAt: Date;
+  author: Author;
+  rating?: Rating;
+  pros?: string[];
+  cons?: string[];
+}
+
+interface Props {
+  article: Article;
+}
+
+export default function ReviewContent({ article }: Props) {
   const { trackEvent } = useAnalytics();
 
-  return (
-    <article className="min-h-screen pt-32 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <header className="mb-8">
-          <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
-            <Link href="/reviews" className="hover:text-indigo-600">Reviews</Link>
-            <span>•</span>
-            <time>{format(new Date(review.createdAt), 'MMMM d, yyyy')}</time>
-          </div>
-          
-          <h1 className="text-4xl font-bold mb-4">{review.title}</h1>
-          
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
-                {review.author.image ? (
-                  <Image
-                    src={review.author.image}
-                    alt={review.author.name}
-                    width={40}
-                    height={40}
-                    className="rounded-full"
-                  />
-                ) : (
-                  <span className="text-lg font-medium text-slate-600">
-                    {review.author.name[0]}
-                  </span>
-                )}
-              </div>
-              <div>
-                <div className="font-medium">{review.author.name}</div>
-                <div className="text-sm text-slate-600">Tech Reviewer</div>
-              </div>
-            </div>
-            <ScoreDisplay score={review.rating} size="lg" />
-          </div>
-        </header>
+  useEffect(() => {
+    trackEvent('review_view', {
+      article_id: article.id,
+      title: article.title,
+      rating: article.rating?.overall
+    });
+  }, [article.id, article.title, article.rating?.overall, trackEvent]);
 
-        {/* Hero Image */}
-        <div className="relative aspect-[16/9] rounded-xl overflow-hidden mb-8">
-          <Image
-            src={review.imageUrl}
-            alt={review.title}
-            fill
-            className="object-cover"
-            priority
+  return (
+    <article className="max-w-4xl mx-auto px-4 py-12">
+      <header className="mb-8">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          {article.title}
+        </h1>
+        <div className="flex items-center text-gray-600 text-sm">
+          <span>By {article.author.name}</span>
+          <span className="mx-2">•</span>
+          <time dateTime={article.createdAt.toISOString()}>
+            {format(new Date(article.createdAt), 'MMMM d, yyyy')}
+          </time>
+        </div>
+      </header>
+
+      {article.imageUrl && (
+        <div className="mb-8">
+          <img
+            src={article.imageUrl}
+            alt={article.title}
+            className="w-full h-[400px] object-cover rounded-lg"
           />
         </div>
+      )}
 
-        {/* Content */}
-        <div className="prose lg:prose-lg mx-auto">
-          <div dangerouslySetInnerHTML={{ __html: review.content }} />
+      {article.rating && (
+        <div className="mb-8 bg-white rounded-lg shadow-sm p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Review Scores</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ScoreDisplay label="Overall" score={article.rating.overall} />
+            <ScoreDisplay label="Design" score={article.rating.design} />
+            <ScoreDisplay label="Features" score={article.rating.features} />
+            <ScoreDisplay label="Performance" score={article.rating.performance} />
+            <ScoreDisplay label="Value" score={article.rating.value} />
+          </div>
         </div>
+      )}
 
-        {/* Pros & Cons */}
-        <div className="grid md:grid-cols-2 gap-8 my-12">
-          <div className="bg-emerald-50 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-emerald-800 mb-4">Pros</h3>
+      <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        {article.pros && article.pros.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Pros</h2>
             <ul className="space-y-2">
-              {review.pros.map((pro, index) => (
-                <li key={index} className="flex items-center gap-2 text-emerald-700">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+              {article.pros.map((pro, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="text-green-500 mr-2">✓</span>
                   {pro}
                 </li>
               ))}
             </ul>
           </div>
+        )}
 
-          <div className="bg-rose-50 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-rose-800 mb-4">Cons</h3>
+        {article.cons && article.cons.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Cons</h2>
             <ul className="space-y-2">
-              {review.cons.map((con, index) => (
-                <li key={index} className="flex items-center gap-2 text-rose-700">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+              {article.cons.map((con, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="text-rose-500 mr-2">✗</span>
                   {con}
                 </li>
               ))}
             </ul>
           </div>
-        </div>
-
-        {/* Specifications */}
-        {review.specifications && (
-          <div className="my-12">
-            <h3 className="text-2xl font-bold mb-6">Specifications</h3>
-            <div className="bg-slate-50 rounded-xl p-6">
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                {Object.entries(review.specifications).map(([key, value]) => (
-                  <div key={key}>
-                    <dt className="text-sm font-medium text-slate-600">{key}</dt>
-                    <dd className="mt-1 text-slate-900">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </div>
         )}
-
-        {/* Verdict */}
-        <div className="my-12 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-8">
-          <h3 className="text-2xl font-bold mb-4">Verdict</h3>
-          <p className="text-lg text-slate-700">{review.verdict}</p>
-        </div>
       </div>
+
+      <div 
+        className="prose lg:prose-lg mx-auto"
+        dangerouslySetInnerHTML={{ __html: article.content }}
+      />
     </article>
   );
 } 

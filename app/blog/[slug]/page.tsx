@@ -1,50 +1,59 @@
-import { ArticleService } from '@/services/articleService';
 import { Metadata } from 'next';
-import BlogPostContent from './BlogPostContent';
 import { notFound } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
+import { Category } from '@prisma/client';
+import BlogPostContent from './BlogPostContent';
 
-export async function generateStaticParams() {
-  const posts = await ArticleService.getLatestPosts(100);
-  return posts.map((post) => ({
-    slug: post.slug,
-  }));
+type Props = {
+  params: {
+    slug: string
+  }
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const post = await ArticleService.getBlogPostBySlug(params.slug).catch(() => null);
-  
-  if (!post) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const article = await prisma.article.findFirst({
+    where: {
+      slug: params.slug,
+      category: Category.BLOG,
+      published: true
+    }
+  });
+
+  if (!article) {
     return {
-      title: 'Post Not Found | Fixed or Custom',
-      description: 'The requested blog post could not be found.',
+      title: 'Blog Post Not Found',
     };
   }
-  
+
   return {
-    title: `${post.title} | Fixed or Custom`,
-    description: post.summary,
+    title: article.title,
+    description: article.summary,
     openGraph: {
-      title: post.title,
-      description: post.summary,
-      images: [post.imageUrl],
+      title: article.title,
+      description: article.summary,
+      images: [article.imageUrl],
+      type: 'article',
     },
   };
 }
 
-export default async function BlogPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
-  const post = await ArticleService.getBlogPostBySlug(params.slug).catch(() => null);
+export default async function BlogPost({ params }: Props) {
+  const { slug } = params;
   
-  if (!post) {
+  const article = await prisma.article.findFirst({
+    where: {
+      slug,
+      category: Category.BLOG,
+      published: true
+    },
+    include: {
+      author: true
+    }
+  });
+
+  if (!article) {
     notFound();
   }
 
-  return <BlogPostContent post={post} />;
+  return <BlogPostContent article={article} />;
 } 
