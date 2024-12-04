@@ -3,7 +3,7 @@
 import { format } from 'date-fns';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useEffect } from 'react';
-import ScoreDisplay from '@/app/components/ui/ScoreDisplay';
+import ScoreDisplay from '@/components/ui/ScoreDisplay';
 
 interface Author {
   id: string;
