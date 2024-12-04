@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Category {
+  REVIEW
+  NEWS
+  GUIDE
+  BLOG
+}
+
+model User {
+  id        String    @id @default(cuid())
+  name      String
+  email     String    @unique
+  password  String
+  image     String?   // Adding optional image field for user avatars
+  role      String    @default("USER")
+  articles  Article[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Article {
+  id          String   @id @default(cuid())
+  title       String
+  subtitle    String?
+  slug        String   @unique
+  content     String   @db.Text
+  summary     String
+  imageUrl    String
+  category    Category
+  published   Boolean  @default(false)
+  author      User     @relation(fields: [authorId], references: [id])
+  authorId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  // Review specific fields
+  rating      Json?    // Store rating scores
+  prices      Json?    // Store price comparison data
+  pros        String[] @default([])
+  cons        String[] @default([])
+}

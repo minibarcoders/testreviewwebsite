@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient definitions -->
+  <defs>
+    <linearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B6B"/>
+      <stop offset="50%" style="stop-color:#4ECDC4"/>
+      <stop offset="100%" style="stop-color:#45B7D1"/>
+    </linearGradient>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#2C3E50"/>
+      <stop offset="100%" style="stop-color:#3498DB"/>
+    </linearGradient>
+    <!-- Glass effect -->
+    <filter id="glass" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+      <feOffset dx="0" dy="2" result="offsetBlur"/>
+      <feFlood flood-color="#ffffff" flood-opacity="0.3" result="offsetColor"/>
+      <feComposite in="offsetColor" in2="offsetBlur" operator="in" result="offsetBlur"/>
+      <feMerge>
+        <feMergeNode in="offsetBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Main circle -->
+  <circle cx="60" cy="60" r="55" fill="url(#mainGradient)" filter="url(#glass)"/>
+
+  <!-- Tech symbol -->
+  <path d="M40 35h40v10H40z M45 50h30v10H45z M50 65h20v10H50z" 
+        fill="#ffffff" 
+        opacity="0.9"
+        filter="url(#glass)"/>
+
+  <!-- Review dots -->
+  <circle cx="35" cy="85" r="4" fill="#ffffff" opacity="0.9"/>
+  <circle cx="60" cy="85" r="4" fill="#ffffff" opacity="0.9"/>
+  <circle cx="85" cy="85" r="4" fill="#ffffff" opacity="0.9"/>
+
+  <!-- Shine effect -->
+  <path d="M85 35a25 25 0 0 1 -25 25 25 25 0 0 1 -25 -25 25 25 0 0 1 25 -25 25 25 0 0 1 25 25" 
+        fill="#ffffff" 
+        opacity="0.1"/>
+</svg>
