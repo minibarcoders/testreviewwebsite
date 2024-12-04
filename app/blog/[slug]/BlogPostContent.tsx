@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import { BlogArticle } from '@/services/articleService';
+import { useAnalytics } from '../../hooks/useAnalytics';
+import { BlogArticle } from '../../services/articleService';
 import { format } from 'date-fns';
 
 type Props = {

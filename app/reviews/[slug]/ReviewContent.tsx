@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import { ReviewArticle } from '@/services/articleService';
-import ScoreDisplay from '@/components/ui/ScoreDisplay';
+import { useAnalytics } from '../../hooks/useAnalytics';
+import { ReviewArticle } from '../../services/articleService';
+import ScoreDisplay from '../../components/ui/ScoreDisplay';
 import { format } from 'date-fns';
 
 type Props = {
