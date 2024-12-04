@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { blogPosts } from '../../data/blog-posts';
+import Image from 'next/image';
+import { ArticleService, type BlogArticle } from '@/services/articleService';
 
-export default function BlogPage() {
-  const posts = Object.values(blogPosts);
+export default async function BlogPage() {
+  const posts = await ArticleService.getLatestPosts(10);
 
   return (
     <main className="min-h-screen pt-32 px-4">
@@ -16,10 +17,11 @@ export default function BlogPage() {
             >
               <Link href={`/blog/${post.slug}`}>
                 <div className="relative h-48 md:h-64">
-                  <img
+                  <Image
                     src={post.imageUrl}
                     alt={post.title}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                   <div className="absolute top-4 left-4 bg-indigo-600 text-white px-3 py-1 rounded-full text-sm">
                     {post.category}
@@ -40,11 +42,11 @@ export default function BlogPage() {
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center space-x-2">
                       <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                        {post.author[0]}
+                        {post.author.name[0]}
                       </div>
-                      <span className="text-gray-700">{post.author}</span>
+                      <span className="text-gray-700">{post.author.name}</span>
                     </div>
-                    <span className="text-gray-500">{post.date}</span>
+                    <span className="text-gray-500">{new Date(post.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
               </Link>

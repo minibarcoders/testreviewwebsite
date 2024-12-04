@@ -1,27 +1,18 @@
-export interface BlogPost {
-  id: number;
-  slug: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  author: string;
-  date: string;
-  category: string;
-  imageUrl: string;
-  tags: string[];
-  readingTime?: string;
-}
+import { BlogArticle } from '@/services/articleService';
 
-export const blogPosts: { [key: string]: BlogPost } = {
+export const blogPosts: Record<string, BlogArticle> = {
   "future-of-ai-in-consumer-tech": {
-    id: 1,
+    id: "1",
     slug: "future-of-ai-in-consumer-tech",
     title: "The Future of AI in Consumer Tech",
+    summary: "How artificial intelligence is reshaping our daily interactions with technology...",
     excerpt: "How artificial intelligence is reshaping our daily interactions with technology...",
-    author: "Sander",
-    date: "March 15, 2024",
-    category: "Technology Trends",
     imageUrl: "https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=1000&auto=format&fit=crop",
+    author: {
+      name: "Sander"
+    },
+    createdAt: "2024-03-15T00:00:00.000Z",
+    category: "Technology Trends",
     readingTime: "6 min read",
     tags: ["AI", "Technology", "Future Tech", "Consumer Electronics"],
     content: `
@@ -63,47 +54,54 @@ export const blogPosts: { [key: string]: BlogPost } = {
     `
   },
   "sustainable-tech-revolution": {
-    id: 2,
+    id: "2",
     slug: "sustainable-tech-revolution",
     title: "Sustainable Tech: A Green Revolution",
+    summary: "Exploring eco-friendly innovations in consumer electronics and their impact...",
     excerpt: "Exploring eco-friendly innovations in consumer electronics and their impact...",
-    author: "Sander",
-    date: "March 12, 2024",
-    category: "Sustainability",
     imageUrl: "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?q=80&w=1000&auto=format&fit=crop",
+    author: {
+      name: "Sander"
+    },
+    createdAt: "2024-03-12T00:00:00.000Z",
+    category: "Sustainability",
     readingTime: "5 min read",
     tags: ["Sustainability", "Green Tech", "Environment", "Innovation"],
     content: `
       <div class="prose lg:prose-lg mx-auto">
-        <p class="lead">The tech industry is undergoing a green revolution, with companies increasingly focusing on sustainable practices and eco-friendly innovations.</p>
-
-        <h2>Sustainable Manufacturing</h2>
-        <p>Companies are adopting new manufacturing processes that prioritize sustainability:</p>
+        <p class="lead">The tech industry is undergoing a significant transformation as sustainability becomes a key focus in product development and manufacturing.</p>
+        
+        <h2>The Need for Change</h2>
+        <p>With growing environmental concerns, the tech industry is adapting to meet new challenges:</p>
         <ul>
-          <li>Recycled materials in product construction</li>
-          <li>Renewable energy in manufacturing facilities</li>
-          <li>Reduced packaging waste</li>
-          <li>Circular economy initiatives</li>
+          <li>Reducing e-waste through modular design</li>
+          <li>Using recycled materials in manufacturing</li>
+          <li>Implementing energy-efficient technologies</li>
+          <li>Developing circular economy initiatives</li>
         </ul>
 
-        <h2>Energy Efficiency</h2>
-        <p>Modern devices are being designed with energy efficiency in mind:</p>
+        <h2>Current Innovations</h2>
+        <p>Several breakthrough technologies are leading the way:</p>
+        <h3>1. Biodegradable Electronics</h3>
+        <p>New materials and designs that minimize environmental impact at end-of-life.</p>
+        
+        <h3>2. Energy Harvesting</h3>
+        <p>Devices that can generate their own power from ambient sources like light and movement.</p>
+        
+        <h3>3. Eco-friendly Manufacturing</h3>
+        <p>New processes that reduce water usage and eliminate harmful chemicals.</p>
+
+        <h2>Consumer Impact</h2>
+        <p>These changes are affecting consumers in several ways:</p>
         <ul>
-          <li>More efficient processors and components</li>
-          <li>Improved power management systems</li>
-          <li>Energy-saving modes and features</li>
+          <li>More repairable devices</li>
+          <li>Lower energy consumption</li>
+          <li>Reduced environmental footprint</li>
+          <li>Better value over time</li>
         </ul>
 
-        <h2>Recycling Programs</h2>
-        <p>Major tech companies are implementing comprehensive recycling programs:</p>
-        <ul>
-          <li>Trade-in and buyback programs</li>
-          <li>E-waste recycling initiatives</li>
-          <li>Component reuse programs</li>
-        </ul>
-
-        <h2>The Road Ahead</h2>
-        <p>The future of sustainable tech looks promising, but there's still work to be done. Companies and consumers must continue to prioritize environmental responsibility in their tech choices.</p>
+        <h2>Looking Forward</h2>
+        <p>The future of sustainable tech looks promising, with continued innovation in materials, design, and manufacturing processes.</p>
       </div>
     `
   }

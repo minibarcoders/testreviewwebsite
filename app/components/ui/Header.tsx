@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAnalytics } from '../../hooks/useAnalytics';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function Header() {
   const pathname = usePathname();

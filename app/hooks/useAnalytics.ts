@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import { GA_MEASUREMENT_ID } from '../components/GoogleAnalytics';
+import { GA_MEASUREMENT_ID } from '@/components/GoogleAnalytics';
 
 declare global {
   interface Window {

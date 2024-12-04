@@ -2,438 +2,344 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Category } from '@prisma/client';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
-interface ReviewFields {
-  rating: number;
+type FormData = {
+  title: string;
+  content: string;
+  summary: string;
+  imageUrl: string;
+  category: Category;
+  authorId: string;
+  published: boolean;
+  rating?: {
+    overall: number;
+    design: number;
+    features: number;
+    performance: number;
+    value: number;
+  };
   pros: string[];
   cons: string[];
-  verdict: string;
-  specifications: { [key: string]: string };
-}
+};
 
-interface BlogFields {
-  excerpt: string;
-  readingTime: string;
-  tags: string[];
-}
-
-// Simple auth - in production, use proper auth system
-const API_KEY = 'your-secret-key';
+const initialFormData: FormData = {
+  title: '',
+  content: '',
+  summary: '',
+  imageUrl: '',
+  category: Category.BLOG,
+  authorId: '', // This should be set from the authenticated user
+  published: false,
+  pros: [''],
+  cons: ['']
+};
 
 export default function NewArticlePage() {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [article, setArticle] = useState({
-    title: '',
-    content: '',
-    category: 'review',
-    imageUrl: '',
-    snippet: '',
-    author: 'Sander',
-    date: new Date().toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    }),
-  });
-
-  const [reviewFields, setReviewFields] = useState<ReviewFields>({
-    rating: 4.0,
-    pros: [''],
-    cons: [''],
-    verdict: '',
-    specifications: {}
-  });
-
-  const [blogFields, setBlogFields] = useState<BlogFields>({
-    excerpt: '',
-    readingTime: '',
-    tags: ['']
-  });
-
-  const [newSpec, setNewSpec] = useState({ key: '', value: '' });
-  const [error, setError] = useState('');
+  const { trackEvent } = useAnalytics();
+  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [error, setError] = useState<string>('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setStatus('submitting');
     setError('');
-    setIsSubmitting(true);
 
     try {
-      // Create the article data
-      const data = {
-        ...article,
-        ...(article.category === 'review' 
-          ? {
-              ...reviewFields,
-              rating: reviewFields.rating,
-              pros: reviewFields.pros.filter(pro => pro.trim() !== ''),
-              cons: reviewFields.cons.filter(con => con.trim() !== ''),
-              verdict: reviewFields.verdict,
-              specifications: reviewFields.specifications,
-              snippet: article.snippet
-            }
-          : {
-              ...blogFields,
-              excerpt: blogFields.excerpt,
-              readingTime: blogFields.readingTime,
-              tags: blogFields.tags.filter(tag => tag.trim() !== '')
-            }
-        ),
-        content: `<div class="prose lg:prose-lg mx-auto">${article.content}</div>`
-      };
+      // Track form submission attempt
+      trackEvent('article_create_attempt', {
+        category: formData.category,
+        content_length: formData.content.length,
+        has_rating: !!formData.rating
+      });
 
-      // Send to API
       const response = await fetch('/api/articles', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`
+          // Add proper authorization header here
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(formData)
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to save article');
+        throw new Error('Failed to create article');
       }
 
-      // Show success message
-      alert('Article saved successfully!');
+      const data = await response.json();
+      setStatus('success');
       
+      // Track successful creation
+      trackEvent('article_create_success', {
+        article_id: data.article.id,
+        category: formData.category
+      });
+
       // Redirect to the new article
-      router.push(`/${article.category === 'review' ? 'reviews' : 'blog'}/${result.slug}`);
+      router.push(`/${formData.category.toLowerCase()}/${data.article.slug}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save article');
-      console.error('Error saving article:', err);
-    } finally {
-      setIsSubmitting(false);
+      setStatus('error');
+      setError(err instanceof Error ? err.message : 'Failed to create article');
+      
+      // Track error
+      trackEvent('article_create_error', {
+        error: err instanceof Error ? err.message : 'Unknown error'
+      });
     }
   };
 
-  const addListItem = (field: 'pros' | 'cons' | 'tags') => {
-    if (field === 'tags') {
-      setBlogFields(prev => ({
-        ...prev,
-        tags: [...prev.tags, '']
-      }));
-    } else {
-      setReviewFields(prev => ({
-        ...prev,
-        [field]: [...prev[field], '']
-      }));
-    }
+  const handleArrayFieldChange = (
+    field: 'pros' | 'cons',
+    index: number,
+    value: string
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].map((item, i) => i === index ? value : item)
+    }));
   };
 
-  const updateListItem = (field: 'pros' | 'cons' | 'tags', index: number, value: string) => {
-    if (field === 'tags') {
-      setBlogFields(prev => ({
-        ...prev,
-        tags: prev.tags.map((item, i) => i === index ? value : item)
-      }));
-    } else {
-      setReviewFields(prev => ({
-        ...prev,
-        [field]: prev[field].map((item, i) => i === index ? value : item)
-      }));
-    }
+  const addArrayField = (field: 'pros' | 'cons') => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: [...prev[field], '']
+    }));
   };
 
-  const addSpecification = () => {
-    if (newSpec.key && newSpec.value) {
-      setReviewFields(prev => ({
-        ...prev,
-        specifications: {
-          ...prev.specifications,
-          [newSpec.key]: newSpec.value
-        }
-      }));
-      setNewSpec({ key: '', value: '' });
-    }
+  const removeArrayField = (field: 'pros' | 'cons', index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index)
+    }));
   };
 
   return (
     <main className="min-h-screen pt-32 px-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Write New Article</h1>
-        {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6">
-            {error}
-          </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-              Category
-            </label>
-            <select
-              id="category"
-              value={article.category}
-              onChange={(e) => setArticle({ ...article, category: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            >
-              <option value="review">Review</option>
-              <option value="blog">Blog Post</option>
-            </select>
-          </div>
+        <h1 className="text-3xl font-bold text-slate-900 mb-8">Create New Article</h1>
 
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-              Title
-            </label>
-            <input
-              type="text"
-              id="title"
-              value={article.title}
-              onChange={(e) => setArticle({ ...article, title: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">
-              Image URL
-            </label>
-            <input
-              type="url"
-              id="imageUrl"
-              value={article.imageUrl}
-              onChange={(e) => setArticle({ ...article, imageUrl: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="snippet" className="block text-sm font-medium text-gray-700 mb-1">
-              Snippet/Summary
-            </label>
-            <textarea
-              id="snippet"
-              rows={2}
-              value={article.snippet}
-              onChange={(e) => setArticle({ ...article, snippet: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              required
-            />
-          </div>
-
-          {article.category === 'review' ? (
-            // Review-specific fields
-            <>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Basic Information */}
+          <section className="bg-white rounded-xl p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900 mb-6">Basic Information</h2>
+            
+            <div className="space-y-6">
               <div>
-                <label htmlFor="rating" className="block text-sm font-medium text-gray-700 mb-1">
-                  Rating (0-5)
+                <label htmlFor="title" className="block text-sm font-medium text-slate-700">
+                  Title
                 </label>
                 <input
-                  type="number"
-                  id="rating"
-                  min="0"
-                  max="5"
-                  step="0.1"
-                  value={reviewFields.rating}
-                  onChange={(e) => setReviewFields({ ...reviewFields, rating: parseFloat(e.target.value) })}
-                  className="mt-1 block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  type="text"
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm 
+                           focus:border-indigo-500 focus:ring-indigo-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Pros
+                <label htmlFor="summary" className="block text-sm font-medium text-slate-700">
+                  Summary
                 </label>
-                {reviewFields.pros.map((pro, index) => (
+                <textarea
+                  id="summary"
+                  value={formData.summary}
+                  onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                  rows={3}
+                  className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm 
+                           focus:border-indigo-500 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="imageUrl" className="block text-sm font-medium text-slate-700">
+                  Image URL
+                </label>
+                <input
+                  type="url"
+                  id="imageUrl"
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                  className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm 
+                           focus:border-indigo-500 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="category" className="block text-sm font-medium text-slate-700">
+                  Category
+                </label>
+                <select
+                  id="category"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value as Category })}
+                  className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm 
+                           focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                  {Object.values(Category).map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </section>
+
+          {/* Content */}
+          <section className="bg-white rounded-xl p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900 mb-6">Content</h2>
+            <textarea
+              id="content"
+              value={formData.content}
+              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              rows={15}
+              className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm 
+                       focus:border-indigo-500 focus:ring-indigo-500"
+              required
+            />
+          </section>
+
+          {/* Review Specific Fields */}
+          {formData.category === Category.REVIEW && (
+            <section className="bg-white rounded-xl p-6 shadow-sm">
+              <h2 className="text-xl font-semibold text-slate-900 mb-6">Review Details</h2>
+              
+              {/* Rating */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {['overall', 'design', 'features', 'performance', 'value'].map((aspect) => (
+                  <div key={aspect}>
+                    <label htmlFor={aspect} className="block text-sm font-medium text-slate-700 capitalize">
+                      {aspect} Rating
+                    </label>
+                    <input
+                      type="number"
+                      id={aspect}
+                      min="0"
+                      max="10"
+                      step="0.1"
+                      value={formData.rating?.[aspect as keyof typeof formData.rating] || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        rating: {
+                          ...formData.rating,
+                          [aspect]: parseFloat(e.target.value)
+                        }
+                      })}
+                      className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm 
+                               focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Pros */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Pros</label>
+                {formData.pros.map((pro, index) => (
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
                       value={pro}
-                      onChange={(e) => updateListItem('pros', index, e.target.value)}
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      onChange={(e) => handleArrayFieldChange('pros', index, e.target.value)}
+                      className="flex-1 rounded-lg border-slate-300 shadow-sm 
+                               focus:border-indigo-500 focus:ring-indigo-500"
                       placeholder="Add a pro"
-                      required
                     />
-                    {index === reviewFields.pros.length - 1 && (
-                      <button
-                        type="button"
-                        onClick={() => addListItem('pros')}
-                        className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                      >
-                        +
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeArrayField('pros', index)}
+                      className="px-3 py-2 text-rose-600 hover:text-rose-700 transition-colors"
+                    >
+                      Remove
+                    </button>
                   </div>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => addArrayField('pros')}
+                  className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 transition-colors"
+                >
+                  + Add Pro
+                </button>
               </div>
 
+              {/* Cons */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cons
-                </label>
-                {reviewFields.cons.map((con, index) => (
+                <label className="block text-sm font-medium text-slate-700 mb-2">Cons</label>
+                {formData.cons.map((con, index) => (
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
                       value={con}
-                      onChange={(e) => updateListItem('cons', index, e.target.value)}
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      onChange={(e) => handleArrayFieldChange('cons', index, e.target.value)}
+                      className="flex-1 rounded-lg border-slate-300 shadow-sm 
+                               focus:border-indigo-500 focus:ring-indigo-500"
                       placeholder="Add a con"
-                      required
                     />
-                    {index === reviewFields.cons.length - 1 && (
-                      <button
-                        type="button"
-                        onClick={() => addListItem('cons')}
-                        className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                      >
-                        +
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeArrayField('cons', index)}
+                      className="px-3 py-2 text-rose-600 hover:text-rose-700 transition-colors"
+                    >
+                      Remove
+                    </button>
                   </div>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => addArrayField('cons')}
+                  className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 transition-colors"
+                >
+                  + Add Con
+                </button>
               </div>
-
-              <div>
-                <label htmlFor="verdict" className="block text-sm font-medium text-gray-700 mb-1">
-                  Verdict
-                </label>
-                <textarea
-                  id="verdict"
-                  rows={3}
-                  value={reviewFields.verdict}
-                  onChange={(e) => setReviewFields({ ...reviewFields, verdict: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Specifications
-                </label>
-                <div className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={newSpec.key}
-                    onChange={(e) => setNewSpec({ ...newSpec, key: e.target.value })}
-                    className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    placeholder="Specification name"
-                  />
-                  <input
-                    type="text"
-                    value={newSpec.value}
-                    onChange={(e) => setNewSpec({ ...newSpec, value: e.target.value })}
-                    className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    placeholder="Value"
-                  />
-                  <button
-                    type="button"
-                    onClick={addSpecification}
-                    className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                  >
-                    Add
-                  </button>
-                </div>
-                <div className="mt-2 space-y-2">
-                  {Object.entries(reviewFields.specifications).map(([key, value]) => (
-                    <div key={key} className="flex justify-between bg-gray-50 p-2 rounded">
-                      <span className="font-medium">{key}:</span>
-                      <span>{value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          ) : (
-            // Blog-specific fields
-            <>
-              <div>
-                <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700 mb-1">
-                  Excerpt
-                </label>
-                <textarea
-                  id="excerpt"
-                  rows={3}
-                  value={blogFields.excerpt}
-                  onChange={(e) => setBlogFields({ ...blogFields, excerpt: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="readingTime" className="block text-sm font-medium text-gray-700 mb-1">
-                  Reading Time
-                </label>
-                <input
-                  type="text"
-                  id="readingTime"
-                  value={blogFields.readingTime}
-                  onChange={(e) => setBlogFields({ ...blogFields, readingTime: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  placeholder="e.g., 5 min read"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tags
-                </label>
-                {blogFields.tags.map((tag, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={tag}
-                      onChange={(e) => updateListItem('tags', index, e.target.value)}
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                      placeholder="Add a tag"
-                      required
-                    />
-                    {index === blogFields.tags.length - 1 && (
-                      <button
-                        type="button"
-                        onClick={() => addListItem('tags')}
-                        className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                      >
-                        +
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </>
+            </section>
           )}
 
-          <div>
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-              Content (HTML)
-            </label>
-            <textarea
-              id="content"
-              rows={15}
-              value={article.content}
-              onChange={(e) => setArticle({ ...article, content: e.target.value })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 font-mono"
-              required
-            />
-          </div>
+          {/* Publishing Options */}
+          <section className="bg-white rounded-xl p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900 mb-6">Publishing Options</h2>
+            
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="published"
+                checked={formData.published}
+                onChange={(e) => setFormData({ ...formData, published: e.target.checked })}
+                className="h-4 w-4 rounded border-slate-300 text-indigo-600 
+                         focus:ring-indigo-500"
+              />
+              <label htmlFor="published" className="ml-2 text-sm text-slate-700">
+                Publish immediately
+              </label>
+            </div>
+          </section>
 
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              onClick={() => router.back()}
-            >
-              Cancel
-            </button>
+          {/* Error Message */}
+          {error && (
+            <div className="rounded-lg bg-rose-50 p-4 text-sm text-rose-600">
+              {error}
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="flex justify-end">
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+              disabled={status === 'submitting'}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium 
+                       hover:bg-indigo-500 transition-colors duration-300
+                       disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Saving...' : 'Publish'}
+              {status === 'submitting' ? 'Creating...' : 'Create Article'}
             </button>
           </div>
         </form>

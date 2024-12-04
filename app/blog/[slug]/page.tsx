@@ -1,4 +1,4 @@
-import { ArticleService } from '../../services/articleService';
+import { ArticleService } from '@/services/articleService';
 import { Metadata } from 'next';
 import BlogPostContent from './BlogPostContent';
 import { notFound } from 'next/navigation';

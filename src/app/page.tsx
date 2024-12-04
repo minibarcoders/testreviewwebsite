@@ -3,9 +3,11 @@ import Link from 'next/link';
 import { ArticleService, ReviewArticle, BlogArticle } from '@/services/articleService';
 import { Metadata } from 'next';
 import { format } from 'date-fns';
+import Image from 'next/image';
 
 export const metadata: Metadata = {
-  // ... existing code ...
+  title: 'Fixed or Custom - Tech Reviews & Insights',
+  description: 'Discover in-depth reviews, expert analysis, and the latest tech insights. Your trusted source for making informed technology decisions.',
 };
 
 export default async function Home() {
@@ -113,11 +115,12 @@ export default async function Home() {
                 {/* Card Content */}
                 <div className="relative bg-white rounded-xl p-4">
                   {/* Image */}
-                  <div className="aspect-[16/9] rounded-lg overflow-hidden mb-4">
-                    <img
+                  <div className="aspect-[16/9] rounded-lg overflow-hidden mb-4 relative">
+                    <Image
                       src={review.imageUrl}
                       alt={review.title}
-                      className="w-full h-full object-cover transform group-hover:scale-105 transition duration-300"
+                      fill
+                      className="object-cover transform group-hover:scale-105 transition duration-300"
                     />
                   </div>
 
@@ -179,10 +182,11 @@ export default async function Home() {
                   <div className="flex flex-col md:flex-row gap-6">
                     {/* Image */}
                     <div className={`relative ${index === 0 ? 'aspect-[2/1] md:w-2/3' : 'aspect-[16/9] md:w-1/3'}`}>
-                      <img
+                      <Image
                         src={post.imageUrl}
                         alt={post.title}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                       />
                     </div>
 
@@ -191,10 +195,12 @@ export default async function Home() {
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden">
                           {post.author.image ? (
-                            <img 
+                            <Image 
                               src={post.author.image} 
                               alt={post.author.name}
-                              className="w-full h-full object-cover"
+                              width={32}
+                              height={32}
+                              className="object-cover"
                             />
                           ) : (
                             <span className="font-medium text-slate-600 text-sm">
