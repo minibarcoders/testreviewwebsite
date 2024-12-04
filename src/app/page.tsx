@@ -1,51 +1,17 @@
-import { format } from 'date-fns';
 import { ArrowRight, Award } from 'lucide-react';
 import Link from 'next/link';
-import { prisma } from '@/lib/prisma';
-import { Article, User } from '@prisma/client';
+import { ArticleService, ReviewArticle, BlogArticle } from '@/services/articleService';
+import { Metadata } from 'next';
+import { format } from 'date-fns';
 
-type ArticleWithAuthor = Article & {
-  author: User;
+export const metadata: Metadata = {
+  // ... existing code ...
 };
 
 export default async function Home() {
-  const latestReviews = await prisma.article.findMany({
-    where: {
-      published: true,
-      category: { equals: 'REVIEW' },
-    },
-    include: {
-      author: {
-        select: {
-          name: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    take: 3,
-  });
-
-  const latestPosts = await prisma.article.findMany({
-    where: {
-      published: true,
-      category: { equals: 'BLOG' },
-    },
-    include: {
-      author: {
-        select: {
-          name: true,
-          image: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    take: 4,
-  });
-
+  const latestReviews = await ArticleService.getLatestReviews();
+  const latestPosts = await ArticleService.getLatestPosts();
+  
   return (
     <main className="flex-1">
       {/* Hero Section */}
@@ -135,7 +101,7 @@ export default async function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {latestReviews.map((review: Article) => (
+            {latestReviews.map((review: ReviewArticle) => (
               <Link 
                 key={review.id} 
                 href={`/reviews/${review.slug}`}
@@ -203,7 +169,7 @@ export default async function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {latestPosts.map((post: ArticleWithAuthor, index: number) => (
+            {latestPosts.map((post: BlogArticle, index: number) => (
               <article 
                 key={post.id}
                 className={`bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden

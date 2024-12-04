@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { ArrowRight, Award } from 'lucide-react';
 import Link from 'next/link';
-import { ArticleService, ReviewArticle, BlogArticle } from '@/services/articleService';
+import { ArticleService } from './services/articleService';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
