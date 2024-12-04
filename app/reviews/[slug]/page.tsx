@@ -1,12 +1,13 @@
-import { ArticleService } from '@/services/articleService';
+import { ArticleService } from '../../services/articleService';
 import { Metadata } from 'next';
 import ReviewContent from './ReviewContent';
 
-type Props = {
+interface Props {
   params: {
     slug: string;
   };
-};
+  searchParams: { [key: string]: string | string[] | undefined };
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const review = await ArticleService.getReviewBySlug(params.slug);

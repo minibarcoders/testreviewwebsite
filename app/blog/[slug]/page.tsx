@@ -1,13 +1,13 @@
-import { ArticleService } from '@/services/articleService';
+import { ArticleService } from '../../services/articleService';
 import { Metadata } from 'next';
-import { format } from 'date-fns';
 import BlogPostContent from './BlogPostContent';
 
-type Props = {
+interface Props {
   params: {
     slug: string;
   };
-};
+  searchParams: { [key: string]: string | string[] | undefined };
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await ArticleService.getBlogPostBySlug(params.slug);
@@ -25,6 +25,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPost({ params }: Props) {
   const post = await ArticleService.getBlogPostBySlug(params.slug);
-
   return <BlogPostContent post={post} />;
 } 
