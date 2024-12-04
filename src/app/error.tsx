@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
+import Link from 'next/link';
+
 export default function Error({
   error,
   reset,
@@ -7,29 +10,34 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white py-16">
-      <div className="max-w-4xl mx-auto px-4 text-center">
-        <h1 className="text-6xl font-bold text-red-600 mb-4">Error</h1>
-        <h2 className="text-3xl font-semibold text-gray-900 mb-8">Something went wrong!</h2>
+    <main className="min-h-screen flex items-center justify-center px-6">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Something went wrong!</h1>
         <p className="text-lg text-gray-600 mb-8">
           {error.message || 'An unexpected error occurred.'}
         </p>
-        <div className="space-x-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             onClick={reset}
-            className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+            className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium 
+                     hover:bg-indigo-700 transition-colors"
           >
-            Try Again
+            Try again
           </button>
-          <a
+          <Link
             href="/"
-            className="inline-block bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
+            className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium 
+                     hover:bg-gray-200 transition-colors"
           >
-            Return Home
-          </a>
+            Go back home
+          </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
