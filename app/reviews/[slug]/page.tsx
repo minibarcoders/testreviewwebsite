@@ -1,13 +1,7 @@
-import { FC } from 'react';
 import { ArticleService } from '../../services/articleService';
 import { Metadata } from 'next';
 import ReviewContent from './ReviewContent';
 import { notFound } from 'next/navigation';
-
-interface PageProps {
-  params: { slug: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
-}
 
 export async function generateStaticParams() {
   const reviews = await ArticleService.getLatestReviews(100);
@@ -16,9 +10,11 @@ export async function generateStaticParams() {
   }));
 }
 
-export async function generateMetadata(
-  { params }: PageProps
-): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
   const review = await ArticleService.getReviewBySlug(params.slug).catch(() => null);
   
   if (!review) {
@@ -39,7 +35,11 @@ export async function generateMetadata(
   };
 }
 
-const ReviewPage: FC<PageProps> = async ({ params }) => {
+export default async function ReviewPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
   const review = await ArticleService.getReviewBySlug(params.slug).catch(() => null);
   
   if (!review) {
@@ -47,6 +47,4 @@ const ReviewPage: FC<PageProps> = async ({ params }) => {
   }
 
   return <ReviewContent review={review} />;
-};
-
-export default ReviewPage; 
+} 
