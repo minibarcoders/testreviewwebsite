@@ -20,11 +20,11 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*", "./app/*"],
-      "@/lib/*": ["./src/lib/*", "./app/lib/*"],
-      "@/components/*": ["./src/components/*", "./app/components/*"],
-      "@/hooks/*": ["./src/hooks/*", "./app/hooks/*"],
-      "@/types/*": ["./src/types/*", "./app/types/*"]
+      "@/*": ["./app/*"],
+      "@/lib/*": ["./app/lib/*"],
+      "@/components/*": ["./app/components/*"],
+      "@/hooks/*": ["./app/hooks/*"],
+      "@/types/*": ["./app/types/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback } from 'react';
-import { GA_MEASUREMENT_ID } from '@/components/GoogleAnalytics';
+import { useEffect } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 declare global {
   interface Window {
@@ -9,25 +9,42 @@ declare global {
   }
 }
 
-export function useAnalytics() {
-  const trackEvent = useCallback((action: string, params: Record<string, any>) => {
-    if (typeof window !== 'undefined' && window.gtag && GA_MEASUREMENT_ID) {
-      window.gtag('event', action, {
-        ...params,
-        send_to: GA_MEASUREMENT_ID
+export const useAnalytics = () => {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (pathname) {
+      trackPageView(pathname);
+    }
+  }, [pathname, searchParams]);
+
+  const trackPageView = (path: string) => {
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'page_view', {
+        page_path: path,
+        page_title: document.title,
+        page_location: window.location.href,
       });
     }
-  }, []);
+  };
 
-  const trackEngagement = useCallback((action: string, contentId: string) => {
-    if (GA_MEASUREMENT_ID) {
-      trackEvent('engagement', {
-        action,
-        content_id: contentId,
-        timestamp: new Date().toISOString()
+  const trackEvent = (
+    eventName: string,
+    eventParams?: Record<string, any>
+  ) => {
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', eventName, {
+        ...eventParams,
+        page_path: pathname,
+        page_title: document.title,
+        page_location: window.location.href,
       });
     }
-  }, [trackEvent]);
+  };
 
-  return { trackEvent, trackEngagement };
-} 
+  return {
+    trackEvent,
+    trackPageView,
+  };
+}; 
