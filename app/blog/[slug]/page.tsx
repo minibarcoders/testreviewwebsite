@@ -4,15 +4,16 @@ import { prisma } from '@/lib/prisma';
 import { Category } from '@prisma/client';
 import BlogPostContent from './BlogPostContent';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
-}): Promise<Metadata> {
+interface GenerateMetadataProps {
+  params: { slug: string }
+}
+
+export async function generateMetadata(
+  props: GenerateMetadataProps
+): Promise<Metadata> {
   const article = await prisma.article.findFirst({
     where: {
-      slug: params.slug,
+      slug: props.params.slug,
       category: Category.BLOG,
       published: true
     }
@@ -36,16 +37,12 @@ export async function generateMetadata({
   };
 }
 
-type PageProps = {
-  params: { slug: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
+interface BlogPostPageProps {
+  params: { slug: string }
 }
 
-export default async function BlogPost({
-  params,
-  searchParams,
-}: PageProps) {
-  const { slug } = params;
+export default async function BlogPost(props: BlogPostPageProps) {
+  const { slug } = props.params;
   
   const article = await prisma.article.findFirst({
     where: {
