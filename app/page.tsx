@@ -20,7 +20,7 @@ interface Article {
   imageUrl: string;
   slug: string;
   createdAt: Date;
-  rating?: Rating | null;
+  rating: Rating | null;
   author: {
     name: string;
   };
@@ -59,7 +59,7 @@ export default async function HomePage() {
         author: true
       }
     })
-  ]);
+  ]) as [Article[], Article[]];
 
   return (
     <main>
