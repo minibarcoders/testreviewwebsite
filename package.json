@@ -16,6 +16,7 @@
     "@tailwindcss/line-clamp": "^0.4.4",
     "@tinymce/tinymce-react": "^4.3.2",
     "@types/bcryptjs": "^2.4.6",
+    "@vercel/analytics": "^1.4.1",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.5.1",
     "date-fns": "^4.1.0",
