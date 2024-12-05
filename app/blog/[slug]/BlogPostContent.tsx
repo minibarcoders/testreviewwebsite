@@ -1,7 +1,7 @@
 'use client';
 
 import { format } from 'date-fns';
-import useAnalytics from '@/hooks/useAnalytics';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { useEffect } from 'react';
 
 interface Author {
