@@ -4,12 +4,12 @@ import { prisma } from '@/lib/prisma';
 import { Category } from '@prisma/client';
 import BlogPostContent from './BlogPostContent';
 
-type Props = {
+export async function generateMetadata({
+  params,
+}: {
   params: { slug: string };
-  searchParams: { [key: string]: string | string[] | undefined };
-};
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}): Promise<Metadata> {
   const article = await prisma.article.findFirst({
     where: {
       slug: params.slug,
@@ -36,7 +36,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function BlogPost({ params, searchParams }: Props) {
+type PageProps = {
+  params: { slug: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
+
+export default async function BlogPost({
+  params,
+  searchParams,
+}: PageProps) {
   const { slug } = params;
   
   const article = await prisma.article.findFirst({
