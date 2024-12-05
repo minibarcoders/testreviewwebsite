@@ -3,17 +3,20 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { Category } from '@prisma/client';
 import BlogPostContent from './BlogPostContent';
+import { ResolvingMetadata } from 'next';
 
-interface GenerateMetadataProps {
-  params: { slug: string }
-}
+type GenerateMetadataProps = {
+  params: { slug: string };
+  searchParams: { [key: string]: string | string[] | undefined };
+};
 
 export async function generateMetadata(
-  props: GenerateMetadataProps
+  { params }: GenerateMetadataProps,
+  parent: ResolvingMetadata
 ): Promise<Metadata> {
   const article = await prisma.article.findFirst({
     where: {
-      slug: props.params.slug,
+      slug: params.slug,
       category: Category.BLOG,
       published: true
     }
@@ -37,12 +40,12 @@ export async function generateMetadata(
   };
 }
 
-interface BlogPostPageProps {
-  params: { slug: string }
-}
+type BlogPageProps = {
+  params: { slug: string };
+};
 
-export default async function BlogPost(props: BlogPostPageProps) {
-  const { slug } = props.params;
+const BlogPost = async ({ params }: BlogPageProps) => {
+  const { slug } = params;
   
   const article = await prisma.article.findFirst({
     where: {
@@ -61,3 +64,5 @@ export default async function BlogPost(props: BlogPostPageProps) {
 
   return <BlogPostContent article={article} />;
 }
+
+export default BlogPost;
