@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { Category } from '@prisma/client'
 import { headers } from 'next/headers'
+import BlogPostContent from './BlogPostContent'
 
 type PageProps = {
   params: { slug: string }

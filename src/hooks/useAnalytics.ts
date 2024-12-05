@@ -5,11 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 
 declare global {
   interface Window {
-    gtag: (
-      command: 'event' | 'config' | 'set',
-      action: string,
-      params?: Record<string, any>
-    ) => void;
+    gtag: (command: string, ...args: any[]) => void;
   }
 }
 
