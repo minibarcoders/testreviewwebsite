@@ -19,11 +19,10 @@ interface Article {
   summary: string;
   imageUrl: string;
   slug: string;
-  rating: Rating | null;
+  createdAt: Date;
+  rating?: Rating | null;
   author: {
-    id: string;
     name: string;
-    email: string;
   };
 }
 
@@ -60,7 +59,7 @@ export default async function HomePage() {
         author: true
       }
     })
-  ]) as [Article[], Article[]];
+  ]);
 
   return (
     <main>
