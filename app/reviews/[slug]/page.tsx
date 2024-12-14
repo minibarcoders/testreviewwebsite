@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { Category } from '@prisma/client';
 import { notFound } from 'next/navigation';
 import ReviewContent from './ReviewContent';
+import { Metadata } from 'next';
 
 interface Rating {
   overall: number;
@@ -40,7 +41,39 @@ function isRating(value: any): value is Rating {
   );
 }
 
-export default async function ReviewPage({ params }: { params: { slug: string } }) {
+type Props = {
+  params: {
+    slug: string;
+  };
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const article = await prisma.article.findFirst({
+    where: {
+      slug: params.slug,
+      category: Category.REVIEW,
+      published: true
+    },
+    select: {
+      title: true,
+      summary: true
+    }
+  });
+
+  if (!article) {
+    return {
+      title: 'Review Not Found',
+      description: 'The requested review could not be found.'
+    };
+  }
+
+  return {
+    title: `${article.title} - Review`,
+    description: article.summary
+  };
+}
+
+export default async function ReviewPage({ params }: Props) {
   const { slug } = params;
 
   if (!slug) {

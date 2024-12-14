@@ -2,16 +2,43 @@ import { prisma } from 'app/lib/prisma'
 import { Category } from '@prisma/client'
 import { notFound } from 'next/navigation'
 import BlogPostContent from './BlogPostContent'
+import { Metadata } from 'next'
 
-interface Props {
-  params: Promise<{
+type Props = {
+  params: {
     slug: string
-  }>
+  }
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
-export default async function BlogPage({ params, searchParams }: Props) {
-  const { slug } = await params;
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const article = await prisma.article.findFirst({
+    where: {
+      slug: params.slug,
+      category: Category.BLOG,
+      published: true
+    },
+    select: {
+      title: true,
+      summary: true
+    }
+  });
+
+  if (!article) {
+    return {
+      title: 'Blog Post Not Found',
+      description: 'The requested blog post could not be found.'
+    };
+  }
+
+  return {
+    title: article.title,
+    description: article.summary
+  };
+}
+
+export default async function BlogPage({ params }: Props) {
+  const { slug } = params;
 
   if (!slug) {
     notFound()
