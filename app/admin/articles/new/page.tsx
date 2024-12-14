@@ -1,24 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Category } from '@prisma/client';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import { useAnalytics } from 'app/hooks/useAnalytics';
+import { useSession } from 'next-auth/react';
+import ImageGallery from '@/components/ImageGallery';
+import { Image } from 'lucide-react';
 
 type FormData = {
   title: string;
   content: string;
   summary: string;
-  imageUrl: string;
+  imageUrl?: string;
   category: Category;
-  authorId: string;
   published: boolean;
   rating?: {
-    overall: number;
-    design: number;
-    features: number;
-    performance: number;
-    value: number;
+    overall?: number;
+    design?: number;
+    features?: number;
+    performance?: number;
+    value?: number;
   };
   pros: string[];
   cons: string[];
@@ -30,7 +32,6 @@ const initialFormData: FormData = {
   summary: '',
   imageUrl: '',
   category: Category.BLOG,
-  authorId: '', // This should be set from the authenticated user
   published: false,
   pros: [''],
   cons: ['']
@@ -39,13 +40,27 @@ const initialFormData: FormData = {
 export default function NewArticlePage() {
   const router = useRouter();
   const { trackEvent } = useAnalytics();
+  const { data: session, status } = useSession();
   const [formData, setFormData] = useState<FormData>(initialFormData);
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string>('');
+  const [showImageGallery, setShowImageGallery] = useState(false);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    
+    if (session?.user?.role !== 'ADMIN') {
+      router.push('/auth/login');
+    }
+  }, [session, status, router]);
+
+  if (status === 'loading') {
+    return <div>Loading...</div>;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus('submitting');
+    setSubmitStatus('submitting');
     setError('');
 
     try {
@@ -60,17 +75,17 @@ export default function NewArticlePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add proper authorization header here
         },
         body: JSON.stringify(formData)
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create article');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create article');
       }
 
       const data = await response.json();
-      setStatus('success');
+      setSubmitStatus('success');
       
       // Track successful creation
       trackEvent('article_create_success', {
@@ -81,7 +96,7 @@ export default function NewArticlePage() {
       // Redirect to the new article
       router.push(`/${formData.category.toLowerCase()}/${data.article.slug}`);
     } catch (err) {
-      setStatus('error');
+      setSubmitStatus('error');
       setError(err instanceof Error ? err.message : 'Failed to create article');
       
       // Track error
@@ -114,6 +129,11 @@ export default function NewArticlePage() {
       ...prev,
       [field]: prev[field].filter((_, i) => i !== index)
     }));
+  };
+
+  const handleImageSelect = (url: string) => {
+    setFormData(prev => ({ ...prev, imageUrl: url }));
+    setShowImageGallery(false);
   };
 
   return (
@@ -158,18 +178,33 @@ export default function NewArticlePage() {
               </div>
 
               <div>
-                <label htmlFor="imageUrl" className="block text-sm font-medium text-slate-700">
-                  Image URL
+                <label className="block text-sm font-medium text-slate-700">
+                  Featured Image
                 </label>
-                <input
-                  type="url"
-                  id="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm 
-                           focus:border-indigo-500 focus:ring-indigo-500"
-                  required
-                />
+                <div className="mt-1 flex items-center gap-4">
+                  {formData.imageUrl && (
+                    <div className="relative w-32 h-32 rounded-lg overflow-hidden">
+                      <img
+                        src={formData.imageUrl}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowImageGallery(!showImageGallery)}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    <Image className="h-5 w-5 mr-2 text-gray-400" />
+                    {formData.imageUrl ? 'Change Image' : 'Select Image'}
+                  </button>
+                </div>
+                {showImageGallery && (
+                  <div className="mt-4">
+                    <ImageGallery onSelect={handleImageSelect} />
+                  </div>
+                )}
               </div>
 
               <div>
@@ -225,7 +260,7 @@ export default function NewArticlePage() {
                       min="0"
                       max="10"
                       step="0.1"
-                      value={formData.rating?.[aspect as keyof typeof formData.rating] || ''}
+                      value={formData.rating?.[aspect as keyof typeof formData.rating] || 0}
                       onChange={(e) => setFormData({
                         ...formData,
                         rating: {
@@ -241,65 +276,73 @@ export default function NewArticlePage() {
               </div>
 
               {/* Pros */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Pros</label>
-                {formData.pros.map((pro, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={pro}
-                      onChange={(e) => handleArrayFieldChange('pros', index, e.target.value)}
-                      className="flex-1 rounded-lg border-slate-300 shadow-sm 
-                               focus:border-indigo-500 focus:ring-indigo-500"
-                      placeholder="Add a pro"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeArrayField('pros', index)}
-                      className="px-3 py-2 text-rose-600 hover:text-rose-700 transition-colors"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => addArrayField('pros')}
-                  className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 transition-colors"
-                >
-                  + Add Pro
-                </button>
+              <div className="mb-8">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-slate-900">Pros</h3>
+                  <button
+                    type="button"
+                    onClick={() => addArrayField('pros')}
+                    className="text-sm text-indigo-600 hover:text-indigo-500"
+                  >
+                    Add Pro
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {formData.pros.map((pro, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={pro}
+                        onChange={(e) => handleArrayFieldChange('pros', index, e.target.value)}
+                        className="block w-full rounded-lg border-slate-300 shadow-sm 
+                                 focus:border-indigo-500 focus:ring-indigo-500"
+                        placeholder="Enter a pro"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeArrayField('pros', index)}
+                        className="text-red-600 hover:text-red-500"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Cons */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Cons</label>
-                {formData.cons.map((con, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={con}
-                      onChange={(e) => handleArrayFieldChange('cons', index, e.target.value)}
-                      className="flex-1 rounded-lg border-slate-300 shadow-sm 
-                               focus:border-indigo-500 focus:ring-indigo-500"
-                      placeholder="Add a con"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeArrayField('cons', index)}
-                      className="px-3 py-2 text-rose-600 hover:text-rose-700 transition-colors"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => addArrayField('cons')}
-                  className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 transition-colors"
-                >
-                  + Add Con
-                </button>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-slate-900">Cons</h3>
+                  <button
+                    type="button"
+                    onClick={() => addArrayField('cons')}
+                    className="text-sm text-indigo-600 hover:text-indigo-500"
+                  >
+                    Add Con
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {formData.cons.map((con, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={con}
+                        onChange={(e) => handleArrayFieldChange('cons', index, e.target.value)}
+                        className="block w-full rounded-lg border-slate-300 shadow-sm 
+                                 focus:border-indigo-500 focus:ring-indigo-500"
+                        placeholder="Enter a con"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeArrayField('cons', index)}
+                        className="text-red-600 hover:text-red-500"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </section>
           )}
@@ -334,16 +377,16 @@ export default function NewArticlePage() {
           <div className="flex justify-end">
             <button
               type="submit"
-              disabled={status === 'submitting'}
+              disabled={submitStatus === 'submitting'}
               className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium 
                        hover:bg-indigo-500 transition-colors duration-300
                        disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {status === 'submitting' ? 'Creating...' : 'Create Article'}
+              {submitStatus === 'submitting' ? 'Creating...' : 'Create Article'}
             </button>
           </div>
         </form>
       </div>
     </main>
   );
-} 
+}

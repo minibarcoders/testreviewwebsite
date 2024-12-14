@@ -2,18 +2,154 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+ 
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+ 
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+ 
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+ 
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+ 
+    --radius: 0.5rem;
+  }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    rgb(var(--background-end-rgb))
-  )
-  rgb(var(--background-start-rgb));
-} 
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-secondary;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/50 rounded;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground;
+  }
+
+  /* Text Selection */
+  ::selection {
+    @apply bg-primary/10 text-primary;
+  }
+
+  /* Link Hover Animation */
+  .hover-underline {
+    @apply relative no-underline;
+  }
+
+  .hover-underline::after {
+    content: '';
+    @apply absolute w-full h-0.5 -bottom-0.5 left-0 bg-current scale-x-0 origin-right transition-transform duration-300;
+  }
+
+  .hover-underline:hover::after {
+    @apply scale-x-100 origin-left;
+  }
+
+  /* Card Hover Effect */
+  .card-hover {
+    @apply transition-transform duration-300 shadow-sm;
+  }
+
+  .card-hover:hover {
+    @apply -translate-y-1 shadow-md;
+  }
+
+  /* Image Hover Effect */
+  .image-hover {
+    @apply overflow-hidden;
+  }
+
+  .image-hover img {
+    @apply transition-transform duration-500;
+  }
+
+  .image-hover:hover img {
+    @apply scale-105;
+  }
+
+  /* Button Animation */
+  .button-hover {
+    @apply relative overflow-hidden transition-colors;
+  }
+
+  .button-hover::after {
+    content: '';
+    @apply absolute inset-0 bg-white/10 -translate-x-full transition-transform duration-300;
+  }
+
+  .button-hover:hover::after {
+    @apply translate-x-0;
+  }
+}
+
+@layer utilities {
+  /* Loading Animation */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Page Transitions */
+  .page-enter {
+    @apply opacity-0 translate-y-4;
+  }
+
+  .page-enter-active {
+    @apply opacity-100 translate-y-0 transition-all duration-200 ease-out;
+  }
+
+  .page-exit {
+    @apply opacity-100;
+  }
+
+  .page-exit-active {
+    @apply opacity-0 -translate-y-4 transition-all duration-200 ease-in;
+  }
+
+  /* Smooth Scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+}

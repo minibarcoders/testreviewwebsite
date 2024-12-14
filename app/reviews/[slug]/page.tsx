@@ -1,58 +1,86 @@
-import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { Category } from '@prisma/client';
+import { notFound } from 'next/navigation';
 import ReviewContent from './ReviewContent';
 
-type Props = {
-  params: { slug: string };
-  searchParams: { [key: string]: string | string[] | undefined };
-};
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const article = await prisma.article.findFirst({
-    where: {
-      slug: params.slug,
-      category: Category.REVIEW,
-      published: true
-    }
-  });
-
-  if (!article) {
-    return {
-      title: 'Review Not Found',
-    };
-  }
-
-  return {
-    title: article.title,
-    description: article.summary,
-    openGraph: {
-      title: article.title,
-      description: article.summary,
-      images: [article.imageUrl],
-      type: 'article',
-    },
-  };
+interface Rating {
+  overall: number;
+  design: number;
+  features: number;
+  performance: number;
+  value: number;
 }
 
-export default async function ReviewPage({ params, searchParams }: Props) {
+interface Article {
+  id: string;
+  title: string;
+  content: string;
+  summary: string;
+  imageUrl: string;
+  createdAt: Date;
+  rating?: Rating;
+  author: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  pros?: string[];
+  cons?: string[];
+}
+
+function isRating(value: any): value is Rating {
+  return (
+    value &&
+    typeof value === 'object' &&
+    'overall' in value &&
+    'design' in value &&
+    'features' in value &&
+    'performance' in value &&
+    'value' in value
+  );
+}
+
+export default async function ReviewPage({ params }: { params: { slug: string } }) {
   const { slug } = params;
-  
-  const article = await prisma.article.findFirst({
+
+  if (!slug) {
+    notFound();
+  }
+
+  const dbArticle = await prisma.article.findFirst({
     where: {
       slug,
       category: Category.REVIEW,
       published: true
     },
     include: {
-      author: true
+      author: {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
+      }
     }
   });
 
-  if (!article) {
+  if (!dbArticle) {
     notFound();
   }
 
+  // Convert the database article to the expected Article type
+  const article: Article = {
+    id: dbArticle.id,
+    title: dbArticle.title,
+    content: dbArticle.content,
+    summary: dbArticle.summary,
+    imageUrl: dbArticle.imageUrl,
+    createdAt: dbArticle.createdAt,
+    author: dbArticle.author,
+    rating: isRating(dbArticle.rating) ? dbArticle.rating : undefined,
+    pros: Array.isArray(dbArticle.pros) ? dbArticle.pros : undefined,
+    cons: Array.isArray(dbArticle.cons) ? dbArticle.cons : undefined
+  };
+
   return <ReviewContent article={article} />;
-} 
+}

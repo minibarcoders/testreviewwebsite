@@ -1,53 +1,22 @@
-import type { Metadata, ResolvingMetadata } from 'next'
-import { notFound } from 'next/navigation'
-import { prisma } from '@/lib/prisma'
+import { prisma } from 'app/lib/prisma'
 import { Category } from '@prisma/client'
-import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
 import BlogPostContent from './BlogPostContent'
 
-type PageProps = {
-  params: { slug: string }
+interface Props {
+  params: Promise<{
+    slug: string
+  }>
+  searchParams: { [key: string]: string | string[] | undefined }
 }
 
-export async function generateMetadata(
-  { params }: PageProps,
-  parent: ResolvingMetadata
-): Promise<Metadata> {
-  // Ensure params are resolved
-  const headersList = headers()
-  
-  const article = await prisma.article.findFirst({
-    where: {
-      slug: params.slug,
-      category: Category.BLOG,
-      published: true
-    }
-  })
+export default async function BlogPage({ params, searchParams }: Props) {
+  const { slug } = await params;
 
-  if (!article) {
-    return {
-      title: 'Blog Post Not Found'
-    }
+  if (!slug) {
+    notFound()
   }
 
-  const metadata: Metadata = {
-    title: article.title,
-    description: article.summary,
-    openGraph: {
-      title: article.title,
-      description: article.summary,
-      images: [article.imageUrl],
-      type: 'article'
-    }
-  }
-
-  return metadata
-}
-
-export default async function BlogPost({ params }: PageProps) {
-  const headersList = headers()
-  const { slug } = params
-  
   const article = await prisma.article.findFirst({
     where: {
       slug,
@@ -55,7 +24,13 @@ export default async function BlogPost({ params }: PageProps) {
       published: true
     },
     include: {
-      author: true
+      author: {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
+      }
     }
   })
 

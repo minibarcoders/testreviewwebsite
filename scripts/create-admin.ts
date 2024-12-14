@@ -1,11 +1,17 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const { randomBytes } = require('crypto');
 
 const prisma = new PrismaClient();
 
+function generateSlug(title: string) {
+  const randomId = randomBytes(8).toString('hex');
+  return `${title.toLowerCase().replace(/ /g, '-')}-${randomId}`;
+}
+
 async function main() {
   const email = 'admin@fixedorcustom.com';
-  const password = 'admin123'; // Change this to a secure password
+  const password = 'Tech2024!'; // New secure password
   const name = 'Admin User';
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -25,6 +31,78 @@ async function main() {
     });
 
     console.log('Admin user created/updated successfully:', user);
+
+    const adminUser = await prisma.user.findUnique({
+        where: {
+            email: 'admin@fixedorcustom.com'
+        }
+    })
+
+    if (!adminUser) {
+        console.error('Admin user not found')
+        return;
+    }
+
+    // Create initial reviews
+    await prisma.article.create({
+        data: {
+          title: 'Review of the New MacBook Pro',
+          slug: generateSlug('Review of the New MacBook Pro'),
+          summary: 'A detailed review of the latest MacBook Pro.',
+          content: 'This is a detailed review of the new MacBook Pro...',
+          imageUrl: '/images/placeholder.jpg',
+          category: 'REVIEW',
+          published: true,
+          authorId: adminUser.id,
+          rating: { overall: 9, design: 9, features: 8, performance: 10, value: 8 },
+        },
+    });
+    await prisma.article.create({
+        data: {
+          title: 'Review of the New iPad Air',
+          slug: generateSlug('Review of the New iPad Air'),
+          summary: 'A detailed review of the latest iPad Air.',
+          content: 'This is a detailed review of the new iPad Air...',
+          imageUrl: '/images/placeholder.jpg',
+          category: 'REVIEW',
+          published: true,
+          authorId: adminUser.id,
+          rating: { overall: 8, design: 9, features: 8, performance: 9, value: 7 },
+        },
+    });
+
+    // Create initial blog posts
+    await prisma.article.create({
+        data: {
+          title: 'Guide to Building a Custom PC',
+          slug: generateSlug('Guide to Building a Custom PC'),
+          summary: 'A comprehensive guide to building your own custom PC.',
+          content: 'This is a comprehensive guide to building your own custom PC...',
+          imageUrl: '/images/placeholder.jpg',
+          category: 'BLOG',
+          published: true,
+          authorId: adminUser.id,
+        },
+    });
+    await prisma.article.create({
+        data: {
+          title: 'The Best Tech Gadgets of 2024',
+          slug: generateSlug('The Best Tech Gadgets of 2024'),
+          summary: 'A list of the best tech gadgets of 2024.',
+          content: 'This is a list of the best tech gadgets of 2024...',
+          imageUrl: '/images/placeholder.jpg',
+          category: 'BLOG',
+          published: true,
+          authorId: adminUser.id,
+        },
+    });
+
+    console.log('Initial reviews and blog posts created successfully.');
+    console.log('\nAdmin Login Credentials:');
+    console.log('------------------------');
+    console.log('Email:', email);
+    console.log('Password:', password);
+    console.log('------------------------');
   } catch (error) {
     console.error('Error managing admin user:', error);
   } finally {
