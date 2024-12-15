@@ -5,11 +5,14 @@ import { getToken } from 'next-auth/jwt'
 export async function middleware(request: NextRequest) {
   // Check if the request is for admin routes
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
-  const isApiRoute = request.nextUrl.pathname.startsWith('/api') && 
-                    !request.nextUrl.pathname.startsWith('/api/auth')
+  
+  // Only require auth for admin routes and non-GET API requests
+  const isProtectedApiRoute = request.nextUrl.pathname.startsWith('/api') && 
+                            !request.nextUrl.pathname.startsWith('/api/auth') &&
+                            request.method !== 'GET'
 
   // For admin routes and protected API routes, verify authentication and admin role
-  if (isAdminRoute || isApiRoute) {
+  if (isAdminRoute || isProtectedApiRoute) {
     const token = await getToken({ 
       req: request,
       secret: process.env.NEXTAUTH_SECRET 
@@ -17,7 +20,7 @@ export async function middleware(request: NextRequest) {
 
     // No token found
     if (!token) {
-      if (isApiRoute) {
+      if (isProtectedApiRoute) {
         return NextResponse.json(
           { error: 'Unauthorized' },
           { status: 401 }
@@ -31,7 +34,7 @@ export async function middleware(request: NextRequest) {
 
     // Verify admin role
     if (token.role !== 'ADMIN') {
-      if (isApiRoute) {
+      if (isProtectedApiRoute) {
         return NextResponse.json(
           { error: 'Forbidden' },
           { status: 403 }

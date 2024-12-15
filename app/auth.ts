@@ -2,32 +2,6 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from './lib/prisma';
 import { compare } from 'bcryptjs';
-import { Session, User } from 'next-auth';
-import { JWT } from 'next-auth/jwt';
-
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      id: string;
-      email: string;
-      role: string;
-    }
-  }
-
-  interface User {
-    id: string;
-    email: string;
-    role: string;
-  }
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT {
-    id: string;
-    email: string;
-    role: string;
-  }
-}
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -74,6 +48,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           role: user.role,
+          name: user.email.split('@')[0], // Default name from email
         };
       }
     }),

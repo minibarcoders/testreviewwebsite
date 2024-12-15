@@ -1,8 +1,12 @@
-import { prisma } from '@/lib/prisma';
-import { Category } from '@prisma/client';
 import { notFound } from 'next/navigation';
+import { Category } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import ReviewContent from './ReviewContent';
-import { Metadata } from 'next';
+
+interface Props {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
 
 interface Rating {
   overall: number;
@@ -12,6 +16,12 @@ interface Rating {
   value: number;
 }
 
+interface Author {
+  id: string;
+  name: string;
+  email: string;
+}
+
 interface Article {
   id: string;
   title: string;
@@ -19,44 +29,20 @@ interface Article {
   summary: string;
   imageUrl: string;
   createdAt: Date;
+  author: Author;
   rating?: Rating;
-  author: {
-    id: string;
-    name: string;
-    email: string;
-  };
   pros?: string[];
   cons?: string[];
 }
 
-function isRating(value: any): value is Rating {
-  return (
-    value &&
-    typeof value === 'object' &&
-    'overall' in value &&
-    'design' in value &&
-    'features' in value &&
-    'performance' in value &&
-    'value' in value
-  );
-}
-
-type Props = {
-  params: {
-    slug: string;
-  };
-};
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props) {
+  const { slug } = await params;
+  
   const article = await prisma.article.findFirst({
     where: {
-      slug: params.slug,
+      slug,
       category: Category.REVIEW,
       published: true
-    },
-    select: {
-      title: true,
-      summary: true
     }
   });
 
@@ -68,17 +54,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: `${article.title} - Review`,
+    title: article.title,
     description: article.summary
   };
 }
 
-export default async function ReviewPage({ params }: Props) {
-  const { slug } = params;
+export async function generateStaticParams() {
+  const articles = await prisma.article.findMany({
+    where: {
+      category: Category.REVIEW,
+      published: true
+    },
+    select: {
+      slug: true
+    }
+  });
 
-  if (!slug) {
-    notFound();
-  }
+  return articles.map((article: { slug: string }) => ({
+    slug: article.slug
+  }));
+}
+
+export default async function ReviewPage({ params }: Props) {
+  const { slug } = await params;
 
   const dbArticle = await prisma.article.findFirst({
     where: {
@@ -101,7 +99,14 @@ export default async function ReviewPage({ params }: Props) {
     notFound();
   }
 
-  // Convert the database article to the expected Article type
+  // Parse the rating JSON if it exists
+  const rating = dbArticle.rating 
+    ? (typeof dbArticle.rating === 'object' 
+        ? dbArticle.rating as unknown as Rating 
+        : JSON.parse(dbArticle.rating as string) as Rating)
+    : undefined;
+
+  // Transform the database article to match the expected Article interface
   const article: Article = {
     id: dbArticle.id,
     title: dbArticle.title,
@@ -110,9 +115,9 @@ export default async function ReviewPage({ params }: Props) {
     imageUrl: dbArticle.imageUrl,
     createdAt: dbArticle.createdAt,
     author: dbArticle.author,
-    rating: isRating(dbArticle.rating) ? dbArticle.rating : undefined,
-    pros: Array.isArray(dbArticle.pros) ? dbArticle.pros : undefined,
-    cons: Array.isArray(dbArticle.cons) ? dbArticle.cons : undefined
+    rating,
+    pros: dbArticle.pros,
+    cons: dbArticle.cons
   };
 
   return <ReviewContent article={article} />;

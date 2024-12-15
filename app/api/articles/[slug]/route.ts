@@ -21,8 +21,8 @@ interface ArticleData {
   cons?: string[];
 }
 
-function toJsonValue(rating: Rating | undefined): Prisma.JsonValue {
-  if (!rating) return null;
+function toJsonValue(rating: Rating | undefined): Prisma.InputJsonValue | undefined {
+  if (!rating) return undefined;
   return {
     overall: rating.overall,
     design: rating.design,
@@ -32,13 +32,35 @@ function toJsonValue(rating: Rating | undefined): Prisma.JsonValue {
   };
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
-  context: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const article = await prisma.article.findUnique({
-      where: { slug: context.params.slug },
+    const { slug } = await params;
+    console.log('[GET] Attempting to fetch article with slug:', slug);
+
+    // Check if user is admin
+    const token = await getToken({ req: request });
+    const isAdmin = token?.role === 'ADMIN';
+    console.log('[GET] User is admin:', isAdmin);
+
+    // First, let's check what articles exist
+    const allArticles = await prisma.article.findMany({
+      where: isAdmin ? undefined : { published: true },
+      select: { id: true, title: true, slug: true, published: true }
+    });
+    console.log('[GET] Available articles:', JSON.stringify(allArticles, null, 2));
+
+    // Now try to find the specific article
+    const article = await prisma.article.findFirst({
+      where: {
+        slug,
+        // Only show published articles to non-admin users
+        ...(isAdmin ? {} : { published: true })
+      },
       include: {
         author: {
           select: {
@@ -50,7 +72,10 @@ export async function GET(
       },
     });
 
+    console.log('[GET] Found article:', article ? JSON.stringify(article, null, 2) : 'null');
+
     if (!article) {
+      console.log('[GET] No article found with slug:', slug);
       return NextResponse.json(
         { error: 'Article not found' },
         { status: 404 }
@@ -59,9 +84,16 @@ export async function GET(
 
     return NextResponse.json(article);
   } catch (error) {
-    console.error('Error fetching article:', error);
+    console.error('[GET] Error fetching article:', error);
+    if (error instanceof Error) {
+      console.error('[GET] Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+    }
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -69,9 +101,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     const token = await getToken({ req: request });
 
     if (!token || token.role !== 'ADMIN') {
@@ -93,7 +126,7 @@ export async function PUT(
     } = data;
 
     const article = await prisma.article.update({
-      where: { slug: context.params.slug },
+      where: { slug },
       data: {
         title,
         content,
@@ -118,9 +151,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     const token = await getToken({ req: request });
 
     if (!token || token.role !== 'ADMIN') {
@@ -131,7 +165,7 @@ export async function DELETE(
     }
 
     await prisma.article.delete({
-      where: { slug: context.params.slug },
+      where: { slug },
     });
 
     return NextResponse.json({ message: 'Article deleted successfully' });

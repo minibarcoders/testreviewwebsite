@@ -19,6 +19,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
   title: {
     default: 'Fixed or Custom - Tech Reviews & Guides',
     template: '%s | Fixed or Custom'

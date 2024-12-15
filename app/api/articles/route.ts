@@ -11,8 +11,8 @@ interface Rating {
   value: number;
 }
 
-function toJsonValue(rating: Rating | undefined): Prisma.JsonValue {
-  if (!rating) return null;
+function toJsonValue(rating: Rating | undefined): Prisma.InputJsonValue | undefined {
+  if (!rating) return undefined;
   return {
     overall: rating.overall,
     design: rating.design,
@@ -86,14 +86,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare the article data
-    const articleData = {
+    const articleData: Prisma.ArticleCreateInput = {
       title: data.title,
       content: data.content,
       summary: data.summary,
       imageUrl: data.imageUrl || '/images/placeholder.png',
       category: data.category as Category,
       slug,
-      authorId: token.id as string,
+      author: {
+        connect: { id: token.id as string }
+      },
       published: data.published || false,
       ...(data.category === Category.REVIEW && {
         rating: toJsonValue(data.rating),
@@ -131,10 +133,21 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const published = searchParams.get('published');
     
+    // Check if user is admin
+    const token = await getToken({ req: request });
+    const isAdmin = token?.role === 'ADMIN';
+
+    // Build where clause
     const where = {
       ...(category && { category: category as Category }),
-      ...(published !== null && { published: published === 'true' })
+      // For non-admin users, only show published articles
+      // For admin users, respect the published query param if provided
+      ...(isAdmin 
+        ? (published !== null ? { published: published === 'true' } : {})
+        : { published: true })
     };
+
+    console.log('[GET] Fetching articles with where clause:', where);
 
     const articles = await prisma.article.findMany({
       where,
@@ -149,11 +162,19 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    console.log('[GET] Found articles:', articles.map(article => ({
+      id: article.id,
+      title: article.title,
+      slug: article.slug,
+      published: article.published,
+      category: article.category
+    })));
+
     return NextResponse.json({ articles });
   } catch (error) {
-    console.error('Error fetching articles:', error);
+    console.error('[GET] Error fetching articles:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch articles' },
+      { error: 'Failed to fetch articles', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

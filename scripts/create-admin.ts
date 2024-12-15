@@ -1,8 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
-const { randomBytes } = require('crypto');
-
-const prisma = new PrismaClient();
+import { hash } from 'bcryptjs';
+import { randomBytes } from 'crypto';
+import { prisma } from '../app/lib/prisma';
 
 function generateSlug(title: string) {
   const randomId = randomBytes(8).toString('hex');
@@ -14,7 +12,7 @@ async function main() {
   const password = 'Tech2024!'; // New secure password
   const name = 'Admin User';
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await hash(password, 10);
 
   try {
     const user = await prisma.user.upsert({

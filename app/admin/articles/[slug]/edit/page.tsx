@@ -1,18 +1,12 @@
 import { Metadata } from 'next';
-import EditArticleForm from '@/admin/articles/[slug]/edit/EditArticleForm';
+import EditArticleForm from './EditArticleForm';
 
-type Props = {
-  params: {
-    slug: string;
-  };
-};
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  return {
-    title: `Edit Article - ${params.slug}`,
-  };
+interface Props {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function EditArticlePage({ params }: Props) {
-  return <EditArticleForm slug={params.slug} />;
+  const { slug } = await params;
+  return <EditArticleForm slug={slug} />;
 }

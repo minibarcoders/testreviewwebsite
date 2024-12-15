@@ -1,6 +1,9 @@
-import Image from 'next/image';
+'use client';
 
-export default function AboutPage() {
+import Image from 'next/image';
+import { Suspense } from 'react';
+
+function AboutPageContent() {
   const teamMembers = [
     {
       name: 'Sander',
@@ -167,5 +170,13 @@ export default function AboutPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function AboutPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AboutPageContent />
+    </Suspense>
   );
 } 

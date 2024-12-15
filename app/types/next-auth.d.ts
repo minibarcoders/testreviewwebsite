@@ -14,7 +14,7 @@ declare module 'next-auth' {
     email: string;
     name: string;
     role: string;
-    password: string;
+    password?: string; // Make password optional since we don't return it from authorize
   }
 }
 

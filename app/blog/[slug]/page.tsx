@@ -4,17 +4,17 @@ import { notFound } from 'next/navigation'
 import BlogPostContent from './BlogPostContent'
 import { Metadata } from 'next'
 
-type Props = {
-  params: {
-    slug: string
-  }
-  searchParams: { [key: string]: string | string[] | undefined }
+interface Props {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  
   const article = await prisma.article.findFirst({
     where: {
-      slug: params.slug,
+      slug,
       category: Category.BLOG,
       published: true
     },
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function BlogPage({ params }: Props) {
-  const { slug } = params;
+  const { slug } = await params;
 
   if (!slug) {
     notFound()
