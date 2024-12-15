@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && DATABASE_URL=$DATABASE_URL prisma migrate deploy && next build",
+    "build": "prisma generate && npx ts-node scripts/migrate.ts && next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate"
