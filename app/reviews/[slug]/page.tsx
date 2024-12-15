@@ -59,26 +59,8 @@ export async function generateMetadata({ params }: Props) {
   };
 }
 
-export async function generateStaticParams() {
-  try {
-    const articles = await prisma.article.findMany({
-      where: {
-        category: Category.REVIEW,
-        published: true
-      },
-      select: {
-        slug: true
-      }
-    });
-
-    return articles.map((article: { slug: string }) => ({
-      slug: article.slug
-    }));
-  } catch (error) {
-    console.error('Error generating static params:', error);
-    return []; // Return empty array if database is not ready
-  }
-}
+// Remove generateStaticParams and make the page dynamic
+export const dynamic = 'force-dynamic';
 
 export default async function ReviewPage({ params }: Props) {
   const { slug } = await params;
