@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { prisma } from '../lib/prisma';
 import { Category } from '@prisma/client';
 import { format } from 'date-fns';
+import { isServer } from 'app/lib/utils';
 
 interface Rating {
   overall: number;
@@ -18,7 +19,7 @@ interface Article {
   imageUrl: string;
   slug: string;
   createdAt: Date;
-  rating: Rating | null;
+  rating?: any;
   author: {
     name: string;
   };
@@ -29,22 +30,22 @@ function isRating(rating: any): rating is Rating {
 }
 
 export default async function ReviewsPage() {
-  const reviews = await prisma.article.findMany({
-    where: {
-      category: Category.REVIEW,
-      published: true,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    include: {
-      author: {
-        select: {
-          name: true,
+  const reviews: Article[] = isServer() ? [] : await prisma.article.findMany({
+      where: {
+        category: Category.REVIEW,
+        published: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        author: {
+          select: {
+            name: true,
+          },
         },
       },
-    },
-  });
+    });
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -90,7 +91,7 @@ export default async function ReviewsPage() {
                 {/* Rating Badge */}
                 {review.rating && isRating(review.rating) && (
                   <div className="absolute top-4 right-4 bg-white rounded-full p-3 shadow-lg">
-                    <span className="text-xl font-bold">{review.rating.overall}</span>
+                    <span className="text-xl font-bold">{(review.rating as Rating).overall}</span>
                   </div>
                 )}
               </div>
