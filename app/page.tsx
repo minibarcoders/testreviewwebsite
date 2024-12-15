@@ -30,35 +30,45 @@ export const metadata: Metadata = {
   description: 'Expert tech reviews and in-depth guides to help you make informed decisions about your tech purchases.',
 };
 
-export default async function Page() {
-  const [latestReviews, latestPosts] = await Promise.all([
-    prisma.article.findMany({
-      where: {
-        category: Category.REVIEW,
-        published: true
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 3,
-      include: {
-        author: true
-      }
-    }),
-    prisma.article.findMany({
-      where: {
-        category: Category.BLOG,
-        published: true
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 3,
-      include: {
-        author: true
-      }
-    })
-  ]) as [Article[], Article[]];
+// Make the page dynamic to avoid build-time database access
+export const dynamic = 'force-dynamic';
 
-  return <HomePage latestReviews={latestReviews} latestPosts={latestPosts} />;
+export default async function Page() {
+  try {
+    const [latestReviews, latestPosts] = await Promise.all([
+      prisma.article.findMany({
+        where: {
+          category: Category.REVIEW,
+          published: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: 3,
+        include: {
+          author: true
+        }
+      }),
+      prisma.article.findMany({
+        where: {
+          category: Category.BLOG,
+          published: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: 3,
+        include: {
+          author: true
+        }
+      })
+    ]) as [Article[], Article[]];
+
+    return <HomePage latestReviews={latestReviews} latestPosts={latestPosts} />;
+  } catch (error) {
+    // Return empty arrays if database is not available
+    // This prevents build failures while still allowing the page to render
+    console.error('Error fetching articles:', error);
+    return <HomePage latestReviews={[]} latestPosts={[]} />;
+  }
 }
