@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { prisma } from 'app/lib/prisma';
 import { Category } from '@prisma/client';
 import { format } from 'date-fns';
+import { isServer } from 'app/lib/utils';
 
 interface Article {
   id: string;
@@ -18,19 +19,23 @@ interface Article {
 }
 
 export default async function BlogPage() {
-  const posts = await prisma.article.findMany({
-    where: {
-      category: Category.BLOG,
-      published: true
-    },
-    orderBy: {
-      createdAt: 'desc'
-    },
-    take: 10,
-    include: {
-      author: true
-    }
-  });
+  let posts: Article[] = [];
+
+  if (!isServer()) {
+    posts = await prisma.article.findMany({
+      where: {
+        category: Category.BLOG,
+        published: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 10,
+      include: {
+        author: true
+      }
+    });
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
