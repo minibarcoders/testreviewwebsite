@@ -4,9 +4,13 @@ let redis: Redis | null = null;
 
 try {
   if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    // Remove any quotes that might be in the environment variables
+    const url = process.env.UPSTASH_REDIS_REST_URL.replace(/"/g, '');
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN.replace(/"/g, '');
+    
     redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      url,
+      token,
     });
   }
 } catch (error) {
