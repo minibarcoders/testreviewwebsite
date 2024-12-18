@@ -8,12 +8,12 @@ export async function middleware(request: NextRequest) {
 
   // Apply rate limiting
   const isAuthRoute = request.nextUrl.pathname === '/api/auth/callback/credentials';
-  const rateLimitCheck = isAuthRoute 
-    ? authRateLimit.check(clientIp)
-    : globalRateLimit.check(clientIp);
+  const rateLimitResult = isAuthRoute 
+    ? await authRateLimit(clientIp)
+    : await globalRateLimit(clientIp);
 
-  if (!rateLimitCheck) {
-    return getRateLimitResponse(isAuthRoute);
+  if (!rateLimitResult.success) {
+    return getRateLimitResponse(rateLimitResult);
   }
 
   // Check if the request is for admin routes
