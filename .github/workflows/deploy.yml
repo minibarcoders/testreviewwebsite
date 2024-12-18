@@ -21,15 +21,40 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      # Run migrations directly with DATABASE_URL
+      # Run migrations with error handling
       - name: Apply database migrations
-        run: npx prisma migrate deploy
+        run: |
+          echo "Starting database migrations..."
+          npx prisma migrate deploy
+          if [ $? -eq 0 ]; then
+            echo "Migrations completed successfully"
+          else
+            echo "Migration failed"
+            exit 1
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # Verify database connection and tables
+      - name: Verify database setup
+        run: |
+          echo "Verifying database connection..."
+          npx prisma db pull
+          if [ $? -eq 0 ]; then
+            echo "Database connection verified"
+          else
+            echo "Database connection failed"
+            exit 1
+          fi
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       # Add a delay to ensure migrations complete
       - name: Wait for migrations
-        run: sleep 10
+        run: |
+          echo "Waiting for migrations to settle..."
+          sleep 15
+          echo "Proceeding with build"
 
       # Install Vercel CLI after migrations
       - name: Install Vercel CLI
