@@ -9,6 +9,26 @@ interface Props {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
+// Add revalidation to enable ISR
+export const revalidate = 3600; // Revalidate every hour
+
+// Generate static params for all published blog posts
+export async function generateStaticParams() {
+  const posts = await prisma.article.findMany({
+    where: {
+      category: Category.BLOG,
+      published: true
+    },
+    select: {
+      slug: true
+    }
+  });
+
+  return posts.map((post) => ({
+    slug: post.slug
+  }));
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   

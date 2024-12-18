@@ -35,6 +35,26 @@ interface Article {
   cons?: string[];
 }
 
+// Add revalidation to enable ISR
+export const revalidate = 3600; // Revalidate every hour
+
+// Generate static params for all published reviews
+export async function generateStaticParams() {
+  const reviews = await prisma.article.findMany({
+    where: {
+      category: Category.REVIEW,
+      published: true
+    },
+    select: {
+      slug: true
+    }
+  });
+
+  return reviews.map((review) => ({
+    slug: review.slug
+  }));
+}
+
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
   
@@ -58,9 +78,6 @@ export async function generateMetadata({ params }: Props) {
     description: article.summary
   };
 }
-
-// Remove generateStaticParams and make the page dynamic
-export const dynamic = 'force-dynamic';
 
 export default async function ReviewPage({ params }: Props) {
   const { slug } = await params;
