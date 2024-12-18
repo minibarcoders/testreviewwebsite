@@ -35,32 +35,54 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      # Verify database connection and tables
-      - name: Verify database setup
+      # Run database seed
+      - name: Seed database
         run: |
-          echo "Verifying database connection..."
-          npx prisma db pull
+          echo "Starting database seed..."
+          npx prisma db seed
           if [ $? -eq 0 ]; then
-            echo "Database connection verified"
+            echo "Database seeded successfully"
           else
-            echo "Database connection failed"
+            echo "Database seeding failed"
             exit 1
           fi
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      # Add a delay to ensure migrations complete
-      - name: Wait for migrations
+      # Verify database setup
+      - name: Verify database setup
         run: |
-          echo "Waiting for migrations to settle..."
+          echo "Verifying database tables..."
+          npx prisma db pull
+          if [ $? -eq 0 ]; then
+            echo "Database verification successful"
+            # Check if Article table exists
+            tables=$(npx prisma db pull 2>&1 | grep -c "Article")
+            if [ $tables -gt 0 ]; then
+              echo "Article table found"
+            else
+              echo "Article table not found"
+              exit 1
+            fi
+          else
+            echo "Database verification failed"
+            exit 1
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # Add a delay to ensure all database operations complete
+      - name: Wait for database operations
+        run: |
+          echo "Waiting for database operations to settle..."
           sleep 15
           echo "Proceeding with build"
 
-      # Install Vercel CLI after migrations
+      # Install Vercel CLI after database setup
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      # Pull environment variables after migrations
+      # Pull environment variables
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
