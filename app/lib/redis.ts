@@ -1,21 +1,12 @@
-import Redis from 'ioredis';
+import { Redis } from '@upstash/redis';
 
 let redis: Redis | null = null;
 
 try {
-  if (process.env.REDIS_URL) {
-    redis = new Redis(process.env.REDIS_URL, {
-      maxRetriesPerRequest: 1,
-      retryStrategy: (times) => {
-        // Only retry once, then give up
-        return times >= 1 ? null : 100;
-      },
-      enableOfflineQueue: false,
-    });
-
-    redis.on('error', (error) => {
-      console.warn('Redis connection warning:', error);
-      // Don't crash on connection errors
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
     });
   }
 } catch (error) {
