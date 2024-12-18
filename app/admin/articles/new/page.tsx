@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Category } from '@prisma/client';
 import { useAnalytics } from 'app/hooks/useAnalytics';
 import { useSession } from 'next-auth/react';
 import ImageGallery from 'app/components/ImageGallery';
 import { Image } from 'lucide-react';
+import AnalyticsWrapper from 'app/components/AnalyticsWrapper';
 
 type FormData = {
   title: string;
@@ -398,8 +399,8 @@ function NewArticleContent() {
 
 export default function NewArticlePage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <AnalyticsWrapper>
       <NewArticleContent />
-    </Suspense>
+    </AnalyticsWrapper>
   );
 }

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { useAnalytics } from 'app/hooks/useAnalytics';
+import AnalyticsWrapper from 'app/components/AnalyticsWrapper';
 
 type FormData = {
   name: string;
@@ -168,8 +169,8 @@ function ContactForm() {
 
 export default function ContactPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <AnalyticsWrapper>
       <ContactForm />
-    </Suspense>
+    </AnalyticsWrapper>
   );
 }

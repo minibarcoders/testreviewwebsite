@@ -2,10 +2,11 @@
 
 import NextAuth from 'next-auth';
 import { authOptions } from '../../auth';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAnalytics } from 'app/hooks/useAnalytics';
+import AnalyticsWrapper from 'app/components/AnalyticsWrapper';
 
 function LoginForm() {
   const router = useRouter();
@@ -111,8 +112,8 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <AnalyticsWrapper>
       <LoginForm />
-    </Suspense>
+    </AnalyticsWrapper>
   );
 }
