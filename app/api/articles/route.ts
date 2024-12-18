@@ -3,17 +3,7 @@ import { prisma } from '../../lib/prisma';
 import { Category, Prisma } from '@prisma/client';
 import { getToken } from 'next-auth/jwt';
 import { validateArticle } from 'app/lib/validation';
-import { 
-  cacheGet, 
-  cacheSet, 
-  cacheInvalidate, 
-  generateCacheKey,
-  getPaginationParams,
-  type PaginatedResult
-} from 'app/lib/redis';
-
-const CACHE_TTL = 60 * 5; // 5 minutes
-const ARTICLES_CACHE_PREFIX = 'articles';
+import { getPaginationParams, type PaginatedResult } from 'app/lib/redis';
 
 interface GetArticlesParams {
   category?: Category;
