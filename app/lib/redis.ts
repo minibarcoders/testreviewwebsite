@@ -74,17 +74,32 @@ export function generateCacheKey(...parts: string[]): string {
   return parts.join(':');
 }
 
-export async function getPaginationParams(key: string): Promise<{ page: number; limit: number }> {
-  const defaultParams = { page: 1, limit: 10 };
-  const cached = await cacheGet(key);
-  
-  if (!cached) {
-    return defaultParams;
-  }
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+}
 
-  try {
-    return JSON.parse(cached);
-  } catch {
-    return defaultParams;
-  }
+export interface PaginationInfo {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  pagination: PaginationInfo;
+}
+
+export function getPaginationParams(params: PaginationParams) {
+  const page = Math.max(1, params.page || 1);
+  const limit = Math.min(100, Math.max(1, params.limit || 10));
+  const skip = (page - 1) * limit;
+
+  return {
+    skip,
+    take: limit,
+    page,
+  };
 }
