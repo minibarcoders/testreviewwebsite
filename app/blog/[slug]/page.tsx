@@ -3,6 +3,7 @@ import { Category } from '@prisma/client'
 import { notFound } from 'next/navigation'
 import BlogPostContent from './BlogPostContent'
 import { Metadata } from 'next'
+import { use } from 'react'
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -10,7 +11,7 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug } = use(params);
   
   const article = await prisma.article.findFirst({
     where: {
@@ -38,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function BlogPage({ params }: Props) {
-  const { slug } = await params;
+  const { slug } = use(params);
 
   if (!slug) {
     notFound()

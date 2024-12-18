@@ -9,8 +9,7 @@ import {
   cacheInvalidate, 
   generateCacheKey,
   getPaginationParams,
-  type PaginatedResult,
-  redis
+  type PaginatedResult
 } from 'app/lib/redis';
 
 const CACHE_TTL = 60 * 5; // 5 minutes
