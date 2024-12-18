@@ -6,14 +6,16 @@ import { globalRateLimit, authRateLimit, getRateLimitResponse, getClientIp } fro
 export async function middleware(request: NextRequest) {
   const clientIp = getClientIp(request);
 
-  // Apply rate limiting
+  // Apply rate limiting if Redis is available
   const isAuthRoute = request.nextUrl.pathname === '/api/auth/callback/credentials';
   const rateLimitResult = isAuthRoute 
     ? await authRateLimit(clientIp)
     : await globalRateLimit(clientIp);
 
-  if (!rateLimitResult.success) {
-    return getRateLimitResponse(rateLimitResult);
+  // Only apply rate limiting if Redis is available and limit is exceeded
+  if (rateLimitResult && !rateLimitResult.success) {
+    const response = getRateLimitResponse(rateLimitResult);
+    if (response) return response;
   }
 
   // Check if the request is for admin routes
