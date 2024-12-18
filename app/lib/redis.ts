@@ -41,3 +41,50 @@ export async function withRedis<T>(
     return fallback;
   }
 }
+
+// Cache operations
+export async function cacheGet(key: string): Promise<string | null> {
+  return await withRedis(
+    async (client) => await client.get(key),
+    null
+  );
+}
+
+export async function cacheSet(key: string, value: string, expireSeconds?: number): Promise<void> {
+  await withRedis(
+    async (client) => {
+      if (expireSeconds) {
+        await client.setex(key, expireSeconds, value);
+      } else {
+        await client.set(key, value);
+      }
+    },
+    undefined
+  );
+}
+
+export async function cacheInvalidate(key: string): Promise<void> {
+  await withRedis(
+    async (client) => await client.del(key),
+    undefined
+  );
+}
+
+export function generateCacheKey(...parts: string[]): string {
+  return parts.join(':');
+}
+
+export async function getPaginationParams(key: string): Promise<{ page: number; limit: number }> {
+  const defaultParams = { page: 1, limit: 10 };
+  const cached = await cacheGet(key);
+  
+  if (!cached) {
+    return defaultParams;
+  }
+
+  try {
+    return JSON.parse(cached);
+  } catch {
+    return defaultParams;
+  }
+}
