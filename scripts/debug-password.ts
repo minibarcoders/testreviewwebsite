@@ -1,29 +1,27 @@
-const bcryptjs = require('bcryptjs');
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+import bcrypt from 'bcryptjs';
+import prisma from './lib/prisma';
 
 async function main() {
+  const email = process.argv[2];
+
+  if (!email) {
+    console.error('Usage: ts-node debug-password.ts <email>');
+    process.exit(1);
+  }
+
   try {
-    // Get the user from the database
     const user = await prisma.user.findUnique({
-      where: { email: 'admin@fixedorcustom.com' },
+      where: { email }
     });
-    
-    console.log('Found user:', user);
-    
-    const password = 'Tech2024!';
-    console.log('Testing password:', password);
+
+    if (!user) {
+      console.error('User not found');
+      process.exit(1);
+    }
+
     console.log('Stored hash:', user.password);
-    
-    // Create a new hash with the same password
-    const newHash = await bcryptjs.hash(password, 10);
-    console.log('New hash of same password:', newHash);
-    
-    // Compare the password
-    const isValid = await bcryptjs.compare(password, user.password);
-    console.log('Password valid:', isValid);
-    
+    console.log('Hash length:', user.password.length);
+    console.log('Hash format check:', user.password.startsWith('$2'));
   } catch (error) {
     console.error('Error:', error);
   } finally {

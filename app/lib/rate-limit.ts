@@ -1,72 +1,51 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { withRedis } from './redis';
 
-interface RateLimitConfig {
-  windowMs: number;
-  max: number;
-}
+export async function rateLimit(
+  key: string,
+  limit: number = 100,
+  window: number = 60
+): Promise<{
+  success: boolean;
+  remaining: number;
+  reset: number;
+}> {
+  const now = Math.floor(Date.now() / 1000);
+  const windowStart = now - window;
 
-class RateLimit {
-  private cache: Map<string, { count: number; resetTime: number }>;
-  private config: RateLimitConfig;
+  return await withRedis(
+    async (redis) => {
+      // Remove old requests
+      await redis.zremrangebyscore(key, 0, windowStart);
 
-  constructor(config: RateLimitConfig) {
-    this.cache = new Map();
-    this.config = config;
-  }
+      // Count recent requests
+      const count = await redis.zcard(key);
 
-  check(ip: string): boolean {
-    const now = Date.now();
-    const record = this.cache.get(ip);
+      if (count >= limit) {
+        // Get reset time
+        const oldestRequest = await redis.zrange(key, 0, 0, 'WITHSCORES');
+        const reset = oldestRequest[1] ? parseInt(oldestRequest[1]) + window : now + window;
 
-    if (!record) {
-      this.cache.set(ip, {
-        count: 1,
-        resetTime: now + this.config.windowMs,
-      });
-      return true;
-    }
+        return {
+          success: false,
+          remaining: 0,
+          reset,
+        };
+      }
 
-    if (now > record.resetTime) {
-      record.count = 1;
-      record.resetTime = now + this.config.windowMs;
-      return true;
-    }
+      // Add current request
+      await redis.zadd(key, now, `${now}-${Math.random()}`);
 
-    if (record.count >= this.config.max) {
-      return false;
-    }
-
-    record.count += 1;
-    return true;
-  }
-}
-
-export const globalRateLimit = new RateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-});
-
-export const authRateLimit = new RateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // Limit each IP to 5 login attempts per hour
-});
-
-export function getRateLimitResponse(isAuthRoute: boolean = false): NextResponse {
-  return NextResponse.json(
-    { 
-      error: isAuthRoute 
-        ? 'Too many login attempts, please try again later.'
-        : 'Too many requests, please try again later.'
+      return {
+        success: true,
+        remaining: limit - count - 1,
+        reset: now + window,
+      };
     },
-    { status: 429 }
+    // Fallback when Redis is unavailable - allow the request
+    {
+      success: true,
+      remaining: 1,
+      reset: now + window,
+    }
   );
-}
-
-export function getClientIp(request: NextRequest): string {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
-  }
-  return '127.0.0.1';
 }

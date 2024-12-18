@@ -1,11 +1,18 @@
-const { PrismaClient } = require('@prisma/client');
+import prisma from './lib/prisma';
 
-const prisma = new PrismaClient();
-
-async function main() {
+async function listUsers() {
   try {
-    const users = await prisma.user.findMany();
-    console.log('All users:', users);
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true
+      }
+    });
+
+    console.log('Users:', JSON.stringify(users, null, 2));
   } catch (error) {
     console.error('Error:', error);
   } finally {
@@ -13,4 +20,4 @@ async function main() {
   }
 }
 
-main();
+listUsers();

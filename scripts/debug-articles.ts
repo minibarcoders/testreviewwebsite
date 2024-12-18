@@ -1,26 +1,27 @@
-import { Article } from '@prisma/client';
-import { prisma } from '../app/lib/prisma';
+import prisma from './lib/prisma';
 
 async function debugArticles() {
   try {
-    console.log('\nFetching all articles...');
-    const articles = await prisma.article.findMany();
-    console.log('Total articles found:', articles.length);
-    console.log('Articles:', articles.map((a: Article) => ({
-      id: a.id,
-      title: a.title,
-      slug: a.slug,
-      published: a.published
-    })));
+    const articles = await prisma.article.findMany({
+      include: {
+        author: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
 
-    if (articles.length > 0) {
-      const firstArticle = articles[0];
-      console.log('\nTrying to fetch first article by slug:', firstArticle.slug);
-      const articleBySlug = await prisma.article.findUnique({
-        where: { slug: firstArticle.slug }
-      });
-      console.log('Article found by slug:', articleBySlug);
-    }
+    console.log('Articles with full content:');
+    articles.forEach((article) => {
+      console.log('\n-------------------');
+      console.log(`Title: ${article.title}`);
+      console.log(`Author: ${article.author.name} (${article.author.email})`);
+      console.log(`Content length: ${article.content.length} characters`);
+      console.log(`First 500 chars: ${article.content.substring(0, 500)}...`);
+      console.log('-------------------\n');
+    });
   } catch (error) {
     console.error('Error:', error);
   } finally {

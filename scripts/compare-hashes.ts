@@ -1,40 +1,31 @@
-const bcryptjs = require('bcryptjs');
-const { PrismaClient } = require('@prisma/client');
+import bcrypt from 'bcryptjs';
+import prisma from './lib/prisma';
 
-const prisma = new PrismaClient();
+async function compareHashes() {
+  const email = process.argv[2];
+  const password = process.argv[3];
 
-async function main() {
+  if (!email || !password) {
+    console.error('Usage: ts-node compare-hashes.ts <email> <password>');
+    process.exit(1);
+  }
+
   try {
-    // Get the user from the database
     const user = await prisma.user.findUnique({
-      where: { email: 'admin@fixedorcustom.com' },
+      where: { email }
     });
-    
-    console.log('Found user:', user);
-    
-    const password = 'Tech2024!';
-    console.log('\nTesting with password:', password);
-    
-    // Create a new hash with the same password
-    const newHash = await bcryptjs.hash(password, 10);
-    console.log('\nStored hash:', user.password);
-    console.log('New hash   :', newHash);
-    
-    // Compare the password with stored hash
-    const isValidStored = await bcryptjs.compare(password, user.password);
-    console.log('\nCompare with stored hash:', isValidStored);
-    
-    // Compare the password with new hash (should always be true)
-    const isValidNew = await bcryptjs.compare(password, newHash);
-    console.log('Compare with new hash   :', isValidNew);
-    
-    // Compare the hashes directly (should be false as salts are different)
-    console.log('\nHashes match directly:', user.password === newHash);
-    
-    // Get hash info
-    console.log('\nStored hash info:', bcryptjs.getRounds(user.password), 'rounds');
-    console.log('New hash info   :', bcryptjs.getRounds(newHash), 'rounds');
-    
+
+    if (!user) {
+      console.error('User not found');
+      process.exit(1);
+    }
+
+    const hash1 = await bcrypt.hash(password, 10);
+    const hash2 = user.password;
+
+    console.log('New hash:', hash1);
+    console.log('Stored hash:', hash2);
+    console.log('Match:', await bcrypt.compare(password, hash2));
   } catch (error) {
     console.error('Error:', error);
   } finally {
@@ -42,4 +33,4 @@ async function main() {
   }
 }
 
-main();
+compareHashes();

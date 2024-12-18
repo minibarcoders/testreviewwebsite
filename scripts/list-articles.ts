@@ -1,6 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+import prisma from './lib/prisma';
 
 async function main() {
   try {
@@ -9,12 +7,13 @@ async function main() {
         author: {
           select: {
             name: true,
-            email: true,
-          },
-        },
-      },
+            email: true
+          }
+        }
+      }
     });
-    console.log('All articles:', articles);
+
+    console.log('Articles:', JSON.stringify(articles, null, 2));
   } catch (error) {
     console.error('Error:', error);
   } finally {
