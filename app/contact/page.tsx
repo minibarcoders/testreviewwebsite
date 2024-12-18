@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAnalytics } from 'app/hooks/useAnalytics';
 
 type FormData = {
@@ -9,7 +9,7 @@ type FormData = {
   message: string;
 };
 
-export default function ContactPage() {
+function ContactForm() {
   const { trackEvent } = useAnalytics();
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -163,5 +163,13 @@ export default function ContactPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ContactPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ContactForm />
+    </Suspense>
   );
 }
