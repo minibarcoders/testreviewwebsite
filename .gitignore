@@ -5,26 +5,36 @@
 
 # testing
 /coverage
+/test-results
+/playwright-report
+/e2e-results
 
 # next.js
 /.next/
 /out/
+/build
 
 # production
 /build
+/dist
 
 # misc
 .DS_Store
 *.pem
+Thumbs.db
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
 
 # local env files
 .env*.local
 .env
+.env.development
+.env.test
+.env.production
 
 # vercel
 .vercel
@@ -32,3 +42,28 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# Prisma
+/prisma/migrations/
+/prisma/*.db
+/prisma/*.db-journal
+
+# Redis
+dump.rdb
+
+# Logs
+logs
+*.log
+
+# Cache
+.cache/

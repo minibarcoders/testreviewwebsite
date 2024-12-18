@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { prisma } from '../lib/prisma';
 import { Category } from '@prisma/client';
 import { format } from 'date-fns';
-import { isServer } from 'app/lib/utils';
 
 interface Rating {
   overall: number;
@@ -30,22 +29,22 @@ function isRating(rating: any): rating is Rating {
 }
 
 export default async function ReviewsPage() {
-  const reviews: Article[] = isServer() ? [] : await prisma.article.findMany({
-      where: {
-        category: Category.REVIEW,
-        published: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: {
-        author: {
-          select: {
-            name: true,
-          },
+  const reviews = await prisma.article.findMany({
+    where: {
+      category: Category.REVIEW,
+      published: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    include: {
+      author: {
+        select: {
+          name: true,
         },
       },
-    });
+    },
+  });
 
   return (
     <main className="min-h-screen bg-gray-50">

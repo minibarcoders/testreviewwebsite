@@ -1,9 +1,20 @@
-import { prisma } from '../app/lib/prisma';
+const { PrismaClient } = require('@prisma/client');
 
-async function listArticles() {
+const prisma = new PrismaClient();
+
+async function main() {
   try {
-    const articles = await prisma.article.findMany();
-    console.log('Articles:', JSON.stringify(articles, null, 2));
+    const articles = await prisma.article.findMany({
+      include: {
+        author: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+    console.log('All articles:', articles);
   } catch (error) {
     console.error('Error:', error);
   } finally {
@@ -11,4 +22,4 @@ async function listArticles() {
   }
 }
 
-listArticles();
+main();

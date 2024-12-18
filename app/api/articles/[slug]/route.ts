@@ -1,99 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { getToken } from 'next-auth/jwt';
-import { Prisma } from '@prisma/client';
-
-interface Rating {
-  overall: number;
-  design: number;
-  features: number;
-  performance: number;
-  value: number;
-}
-
-interface ArticleData {
-  title: string;
-  content: string;
-  summary: string;
-  imageUrl: string;
-  rating?: Rating;
-  pros?: string[];
-  cons?: string[];
-}
-
-function toJsonValue(rating: Rating | undefined): Prisma.InputJsonValue | undefined {
-  if (!rating) return undefined;
-  return {
-    overall: rating.overall,
-    design: rating.design,
-    features: rating.features,
-    performance: rating.performance,
-    value: rating.value
-  };
-}
-
-export const dynamic = 'force-dynamic';
+import { validateArticle } from 'app/lib/validation';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const startTime = Date.now();
   try {
+    console.log('[GET] Starting request');
     const { slug } = await params;
-    console.log('[GET] Attempting to fetch article with slug:', slug);
+    console.log('[GET] Resolved slug:', slug);
 
-    // Check if user is admin
     const token = await getToken({ req: request });
+    console.log('[GET] Auth token:', token ? { 
+      email: token.email, 
+      role: token.role 
+    } : 'null');
+
     const isAdmin = token?.role === 'ADMIN';
-    console.log('[GET] User is admin:', isAdmin);
+    console.log('[GET] Is admin:', isAdmin);
 
-    // First, let's check what articles exist
-    const allArticles = await prisma.article.findMany({
-      where: isAdmin ? undefined : { published: true },
-      select: { id: true, title: true, slug: true, published: true }
-    });
-    console.log('[GET] Available articles:', JSON.stringify(allArticles, null, 2));
-
-    // Now try to find the specific article
+    // Fetch article directly from database
+    console.log('[DB] Fetching article:', { slug, includeUnpublished: isAdmin });
     const article = await prisma.article.findFirst({
       where: {
         slug,
-        // Only show published articles to non-admin users
-        ...(isAdmin ? {} : { published: true })
+        ...(isAdmin ? {} : { published: true }),
       },
       include: {
         author: {
           select: {
-            id: true,
             name: true,
             email: true,
+            image: true,
           },
         },
       },
     });
 
-    console.log('[GET] Found article:', article ? JSON.stringify(article, null, 2) : 'null');
+    console.log('[DB] Found article:', article ? { 
+      id: article.id, 
+      title: article.title,
+      fetchTime: `${Date.now() - startTime}ms`
+    } : 'null');
 
     if (!article) {
-      console.log('[GET] No article found with slug:', slug);
+      console.log('[GET] Article not found');
       return NextResponse.json(
         { error: 'Article not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(article);
+    return NextResponse.json({ article });
   } catch (error) {
     console.error('[GET] Error fetching article:', error);
-    if (error instanceof Error) {
-      console.error('[GET] Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      });
-    }
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to fetch article', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -106,6 +71,10 @@ export async function PUT(
   try {
     const { slug } = await params;
     const token = await getToken({ req: request });
+    console.log('[PUT] Auth token:', token ? { 
+      email: token.email, 
+      role: token.role 
+    } : 'null');
 
     if (!token || token.role !== 'ADMIN') {
       return NextResponse.json(
@@ -114,36 +83,88 @@ export async function PUT(
       );
     }
 
-    const data = await request.json() as ArticleData;
-    const {
-      title,
-      content,
-      summary,
-      imageUrl,
-      rating,
-      pros,
-      cons,
-    } = data;
-
-    const article = await prisma.article.update({
+    const article = await prisma.article.findFirst({
       where: { slug },
+      select: { id: true, authorId: true },
+    });
+
+    if (!article) {
+      return NextResponse.json(
+        { error: 'Article not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get and log the input data
+    const data = await request.json();
+    console.log('[PUT] Input data:', {
+      ...data,
+      content: data.content?.length + ' chars',
+    });
+
+    // Validate input data
+    const validatedData = validateArticle(data);
+    console.log('[PUT] Validation passed');
+
+    // Check if title changed and generate new slug
+    let newSlug = slug;
+    if (validatedData.title) {
+      newSlug = validatedData.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+      if (newSlug !== slug) {
+        // Check if new slug already exists
+        const existingArticle = await prisma.article.findFirst({
+          where: { 
+            slug: newSlug,
+            id: { not: article.id } // Exclude current article
+          },
+        });
+
+        if (existingArticle) {
+          return NextResponse.json(
+            { error: 'An article with this title already exists' },
+            { status: 409 }
+          );
+        }
+      }
+    }
+
+    // Update the article
+    const updatedArticle = await prisma.article.update({
+      where: { id: article.id },
       data: {
-        title,
-        content,
-        summary,
-        imageUrl,
-        rating: toJsonValue(rating),
-        pros,
-        cons,
-        updatedAt: new Date(),
+        ...validatedData,
+        slug: newSlug,
+      },
+      include: {
+        author: {
+          select: {
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
       },
     });
 
-    return NextResponse.json(article);
+    console.log('[PUT] Article updated:', { 
+      id: updatedArticle.id, 
+      title: updatedArticle.title,
+      newSlug 
+    });
+
+    return NextResponse.json({ article: updatedArticle });
   } catch (error) {
-    console.error('Error updating article:', error);
+    console.error('[PUT] Error updating article:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Failed to update article', 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        validation: error instanceof Error ? error.cause : undefined
+      },
       { status: 500 }
     );
   }
@@ -164,15 +185,27 @@ export async function DELETE(
       );
     }
 
-    await prisma.article.delete({
+    const article = await prisma.article.findFirst({
       where: { slug },
+      select: { id: true, authorId: true },
     });
 
-    return NextResponse.json({ message: 'Article deleted successfully' });
+    if (!article) {
+      return NextResponse.json(
+        { error: 'Article not found' },
+        { status: 404 }
+      );
+    }
+
+    await prisma.article.delete({
+      where: { id: article.id },
+    });
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting article:', error);
+    console.error('[DELETE] Error deleting article:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to delete article', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

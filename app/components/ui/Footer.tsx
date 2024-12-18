@@ -108,7 +108,14 @@ export default function Footer() {
         <div className="border-t border-slate-200 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-slate-600 text-sm">
-              © {new Date().getFullYear()} Fixed or Custom. All rights reserved.
+              © {new Date().getFullYear()} Fixed or Custom. All rights reserved.{' '}
+              <Link 
+                href="/auth/login" 
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+                onClick={() => handleNavClick('admin')}
+              >
+                •
+              </Link>
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a 

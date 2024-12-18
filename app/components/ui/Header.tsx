@@ -51,7 +51,6 @@ export default function Header() {
           {[
             { href: '/reviews', label: 'Reviews' },
             { href: '/blog', label: 'Blog' },
-            { href: '/admin/articles/new', label: 'Admin' },
             { href: '/about', label: 'About' },
             { href: '/contact', label: 'Contact' }
           ].map(({ href, label }) => (

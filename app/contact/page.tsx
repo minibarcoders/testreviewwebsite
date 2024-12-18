@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import { useState, useEffect } from 'react';
+import { useAnalytics } from 'app/hooks/useAnalytics';
 
 type FormData = {
   name: string;
@@ -17,6 +17,10 @@ export default function ContactPage() {
     message: ''
   });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+
+  useEffect(() => {
+    trackEvent('contact_form_view');
+  }, [trackEvent]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,4 +164,4 @@ export default function ContactPage() {
       </div>
     </main>
   );
-} 
+}

@@ -1,26 +1,28 @@
-import 'next-auth';
-import { DefaultSession } from 'next-auth';
+import { DefaultSession, DefaultUser } from 'next-auth';
+import { JWT, DefaultJWT } from 'next-auth/jwt';
 
 declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
       role: string;
+      image?: string | null;
     } & DefaultSession['user'];
   }
 
-  interface User {
+  interface User extends DefaultUser {
     id: string;
-    email: string;
-    name: string;
     role: string;
-    password?: string; // Make password optional since we don't return it from authorize
+    csrfToken?: string;
+    image?: string | null;
   }
 }
 
 declare module 'next-auth/jwt' {
-  interface JWT {
+  interface JWT extends DefaultJWT {
     id: string;
     role: string;
+    csrfToken?: string;
+    image?: string | null;
   }
 }

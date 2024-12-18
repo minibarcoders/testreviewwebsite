@@ -15,9 +15,11 @@ export default function ScoreDisplay({ score, label, size = 'md' }: Props) {
   useEffect(() => {
     trackEvent('score_display_view', {
       score,
-      size
+      size,
+      label,
+      category: getScoreConfig(score).label
     });
-  }, [score, size, trackEvent]);
+  }, [score, size, label, trackEvent]);
 
   const sizeClasses = {
     sm: 'w-12 h-12 text-lg',
@@ -69,13 +71,33 @@ export default function ScoreDisplay({ score, label, size = 'md' }: Props) {
 
   const config = getScoreConfig(score);
 
+  const handleHover = () => {
+    trackEvent('score_display_hover', {
+      score,
+      size,
+      label,
+      category: config.label
+    });
+  };
+
+  const handleClick = () => {
+    trackEvent('score_display_click', {
+      score,
+      size,
+      label,
+      category: config.label
+    });
+  };
+
   return (
     <div className="flex flex-col items-center gap-3" role="presentation">
       <div 
         className={`relative ${sizeClasses[size]} ring-2 ring-offset-2 ${config.ringColor}
                    rounded-full shadow-lg transform transition-all duration-300
-                   hover:scale-105 hover:shadow-xl`}
+                   hover:scale-105 hover:shadow-xl cursor-pointer`}
         aria-label={`Score: ${score} out of 10 - ${config.label}`}
+        onMouseEnter={handleHover}
+        onClick={handleClick}
       >
         {/* Background Circle with Gradient */}
         <div 

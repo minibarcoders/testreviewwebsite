@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Category } from '@prisma/client';
 import { useAnalytics } from 'app/hooks/useAnalytics';
 import { useSession } from 'next-auth/react';
-import ImageGallery from '@/components/ImageGallery';
+import ImageGallery from 'app/components/ImageGallery';
 import { Image } from 'lucide-react';
 
 type FormData = {
@@ -26,22 +26,44 @@ type FormData = {
   cons: string[];
 };
 
-const initialFormData: FormData = {
-  title: '',
-  content: '',
-  summary: '',
-  imageUrl: '',
-  category: Category.BLOG,
-  published: false,
-  pros: [''],
-  cons: ['']
-};
+function getInitialFormData(type?: string): FormData {
+  const category = type?.toUpperCase() === 'REVIEW' ? Category.REVIEW : 
+                  type?.toUpperCase() === 'BLOG' ? Category.BLOG : 
+                  Category.BLOG;
+
+  const formData: FormData = {
+    title: '',
+    content: '',
+    summary: '',
+    imageUrl: '',
+    category,
+    published: false,
+    pros: [''],
+    cons: ['']
+  };
+
+  // Initialize rating if it's a review
+  if (category === Category.REVIEW) {
+    formData.rating = {
+      overall: 0,
+      design: 0,
+      features: 0,
+      performance: 0,
+      value: 0
+    };
+  }
+
+  return formData;
+}
 
 function NewArticleContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { trackEvent } = useAnalytics();
   const { data: session, status } = useSession();
-  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [formData, setFormData] = useState<FormData>(() => 
+    getInitialFormData(searchParams.get('type') || undefined)
+  );
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string>('');
   const [showImageGallery, setShowImageGallery] = useState(false);
@@ -139,7 +161,9 @@ function NewArticleContent() {
   return (
     <main className="min-h-screen pt-32 px-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-slate-900 mb-8">Create New Article</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-8">
+          Create New {formData.category === Category.REVIEW ? 'Review' : 'Blog Post'}
+        </h1>
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Basic Information */}
@@ -205,25 +229,6 @@ function NewArticleContent() {
                     <ImageGallery onSelect={handleImageSelect} />
                   </div>
                 )}
-              </div>
-
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium text-slate-700">
-                  Category
-                </label>
-                <select
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value as Category })}
-                  className="mt-1 block w-full rounded-lg border-slate-300 shadow-sm 
-                           focus:border-indigo-500 focus:ring-indigo-500"
-                >
-                  {Object.values(Category).map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
           </section>

@@ -1,0 +1,14 @@
+{
+  "name": "Fixed or Custom",
+  "short_name": "Fixed or Custom",
+  "icons": [
+    {
+      "src": "/images/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}
