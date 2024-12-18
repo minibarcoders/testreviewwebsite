@@ -54,7 +54,6 @@ next-env.d.ts
 !/public/uploads/.gitkeep
 
 # Prisma
-/prisma/migrations/
 /prisma/*.db
 /prisma/*.db-journal
 
