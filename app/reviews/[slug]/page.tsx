@@ -4,8 +4,8 @@ import { prisma } from '../../lib/prisma';
 import ReviewContent from './ReviewContent';
 
 interface Props {
-  params: { slug: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 interface Rating {
@@ -36,7 +36,7 @@ interface Article {
 }
 
 export async function generateMetadata({ params }: Props) {
-  const { slug } = params;
+  const { slug } = await params;
   
   const article = await prisma.article.findFirst({
     where: {
@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: Props) {
 export const dynamic = 'force-dynamic';
 
 export default async function ReviewPage({ params }: Props) {
-  const { slug } = params;
+  const { slug } = await params;
 
   const dbArticle = await prisma.article.findFirst({
     where: {
