@@ -2,11 +2,10 @@ import { notFound } from 'next/navigation';
 import { Category } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import ReviewContent from './ReviewContent';
-import { use } from 'react';
 
 interface Props {
-  params: Promise<{ slug: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  params: { slug: string };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
 interface Rating {
@@ -37,7 +36,7 @@ interface Article {
 }
 
 export async function generateMetadata({ params }: Props) {
-  const { slug } = use(params);
+  const { slug } = params;
   
   const article = await prisma.article.findFirst({
     where: {
@@ -64,7 +63,7 @@ export async function generateMetadata({ params }: Props) {
 export const dynamic = 'force-dynamic';
 
 export default async function ReviewPage({ params }: Props) {
-  const { slug } = use(params);
+  const { slug } = params;
 
   const dbArticle = await prisma.article.findFirst({
     where: {
