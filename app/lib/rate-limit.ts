@@ -29,8 +29,13 @@ export async function rateLimit(
 
       if (count >= limit) {
         // Get reset time
-        const oldestRequest = await redis.zrange(key, 0, 0, 'WITHSCORES');
-        const reset = oldestRequest[1] ? parseInt(oldestRequest[1]) + window : now + window;
+        const oldestRequest = await redis.zrange(key, 0, 0, {
+          withScores: true
+        }) as [string, string][];
+        
+        const reset = oldestRequest.length > 0 
+          ? parseInt(oldestRequest[0][1]) + window 
+          : now + window;
 
         return {
           success: false,
@@ -40,7 +45,7 @@ export async function rateLimit(
       }
 
       // Add current request
-      await redis.zadd(key, now, `${now}-${Math.random()}`);
+      await redis.zadd(key, { score: now, member: `${now}-${Math.random()}` });
 
       return {
         success: true,
