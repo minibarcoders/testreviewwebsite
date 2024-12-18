@@ -30,8 +30,8 @@ export const metadata: Metadata = {
   description: 'Expert tech reviews and in-depth guides to help you make informed decisions about your tech purchases.',
 };
 
-// Make the page dynamic to avoid build-time database access
-export const dynamic = 'force-dynamic';
+// Use ISR instead of force-dynamic to enable caching
+export const revalidate = 3600; // Revalidate every hour
 
 export default async function Page() {
   try {

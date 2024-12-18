@@ -17,6 +17,9 @@ interface Article {
   };
 }
 
+// Add revalidation to enable ISR
+export const revalidate = 3600; // Revalidate every hour
+
 export default async function BlogPage() {
   const posts = await prisma.article.findMany({
     where: {
