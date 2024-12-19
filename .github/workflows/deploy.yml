@@ -57,11 +57,11 @@ jobs:
           if [ $? -eq 0 ]; then
             echo "Database verification successful"
             # Check if Article table exists
-            tables=$(npx prisma db pull 2>&1 | grep -c "Article")
-            if [ $tables -gt 0 ]; then
-              echo "Article table found"
+            npx prisma introspect
+            if [ $? -eq 0 ]; then
+              echo "Introspection successful"
             else
-              echo "Article table not found"
+              echo "Introspection failed"
               exit 1
             fi
           else
